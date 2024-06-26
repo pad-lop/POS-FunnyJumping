@@ -42,7 +42,6 @@
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.VBox?>
-<?import javafx.scene.text.Font?>
 
 <VBox prefWidth="900.0" xmlns="http://javafx.com/javafx/22" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.example.posfunnyjumping.HomeController">
   <children>
@@ -63,15 +62,6 @@
       </HBox>
       <HBox alignment="CENTER" fillHeight="false" style="-fx-background-color: lightgray;" VBox.vgrow="NEVER">
          <children>
-            <Label alignment="CENTER" maxWidth="1.7976931348623157E308" text="Temporizador">
-               <font>
-                  <Font name="System Bold" size="19.0" />
-               </font>
-               <padding>
-                  <Insets top="5.0" />
-               </padding>
-            </Label>
-            <Separator minWidth="150.0" visible="false" />
             <Label text="Buscar">
                <HBox.margin>
                   <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />

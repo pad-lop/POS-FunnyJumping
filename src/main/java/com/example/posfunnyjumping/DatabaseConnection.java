@@ -24,8 +24,8 @@ public class DatabaseConnection {
                 CREATE TABLE IF NOT EXISTS productos (
                  clave integer PRIMARY KEY AUTOINCREMENT,
                  descripcion text NOT NULL,
-                 precio real DEFAULT 0,
-                 existencia REAL DEFAULT 0
+                 precio real NOT NULL DEFAULT 0,
+                 existencia REAL NOT NULL DEFAULT 0
                 );""";
 
         try (Connection conn = connect();
@@ -36,7 +36,7 @@ public class DatabaseConnection {
         }
     }
 
-     public static List<Producto> getAllProductos() {
+    public static List<Producto> getAllProductos() {
         String sql = "SELECT * FROM productos";
         List<Producto> productos = new ArrayList<>();
 
@@ -60,6 +60,37 @@ public class DatabaseConnection {
         return productos;
     }
 
+    public static void updateProducto(int clave, String descripcion, double precio, double existencia) {
+    String sql = "UPDATE productos SET descripcion = ?, precio = ?, existencia = ? WHERE clave = ?";
+
+    try (Connection conn = connect();
+         PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        pstmt.setString(1, descripcion);
+        pstmt.setDouble(2, precio);
+        pstmt.setDouble(3, existencia);
+        pstmt.setInt(4, clave);
+        pstmt.executeUpdate();
+    } catch (SQLException e) {
+        System.out.println(e.getMessage());
+    }
+}
+
+
+    public static void insertProducto(String descripcion, double precio, double existencia) {
+        String sql = "INSERT INTO productos(descripcion, precio, existencia) VALUES(?,?,?)";
+
+        try (Connection conn = connect();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, descripcion);
+            pstmt.setDouble(2, precio);
+            pstmt.setDouble(3, existencia);
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
+        }
+    }
+
+
     public static class Producto {
         private final int clave;
         private final String descripcion;
@@ -73,9 +104,26 @@ public class DatabaseConnection {
             this.existencia = existencia;
         }
 
+        // Getter methods
+        public int getClave() {
+            return clave;
+        }
+
+        public String getDescripcion() {
+            return descripcion;
+        }
+
+        public double getPrecio() {
+            return precio;
+        }
+
+        public double getExistencia() {
+            return existencia;
+        }
+
         @Override
         public String toString() {
-            return "Usuario{" +
+            return "Producto{" +
                     "clave=" + clave +
                     ", descripcion='" + descripcion + '\'' +
                     ", precio=" + precio +
@@ -83,4 +131,6 @@ public class DatabaseConnection {
                     '}';
         }
     }
+
+
 }

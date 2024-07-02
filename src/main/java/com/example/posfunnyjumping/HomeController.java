@@ -20,22 +20,11 @@ import java.util.Objects;
 
 public class HomeController {
 
-    @FXML
-    private TextField ProductoDescripcionTextField;
-    @FXML
-    private TextField ProductoPrecioTextField;
-    @FXML
-    private Label welcomeText;
 
     private Stage stage;
     private Scene scene;
     private Parent root;
 
-    @FXML
-    private TabPane tabPane;
-
-    @FXML
-    private TableView<DatabaseConnection.Producto> productosTable;
 
     @FXML
     private TableColumn<DatabaseConnection.Producto, Integer> claveColumn;
@@ -49,6 +38,26 @@ public class HomeController {
     @FXML
     private TableColumn<DatabaseConnection.Producto, Double> existenciaColumn;
 
+
+    @FXML
+    private TableColumn<DatabaseConnection.Producto, Void> editarColumn; // Define as Void for buttons
+
+
+    @FXML
+    private TextField ProductoClaveTextField;
+
+    @FXML
+    private TextField ProductoDescripcionTextField;
+    @FXML
+    private TextField ProductoPrecioTextField;
+    @FXML
+    private TextField ProductoExistenciaTextField;
+
+    @FXML
+    private TableView<DatabaseConnection.Producto> productosTable;
+
+    private List<DatabaseConnection.Producto> productosList;
+
     @FXML
     private void handleTabOpen(Event event) {
         Tab tab = (Tab) event.getSource();
@@ -56,15 +65,20 @@ public class HomeController {
             switch (tab.getId()) {
 
                 case "Productos": {
+
+
+                    configureTableColumns(); // Ensure columns are configured correctly
+
                     claveColumn.setCellValueFactory(new PropertyValueFactory<>("clave"));
                     descripcionColumn.setCellValueFactory(new PropertyValueFactory<>("descripcion"));
                     precioColumn.setCellValueFactory(new PropertyValueFactory<>("precio"));
                     existenciaColumn.setCellValueFactory(new PropertyValueFactory<>("existencia"));
 
-                    List<DatabaseConnection.Producto> productosList = DatabaseConnection.getAllProductos();
+                    productosList = DatabaseConnection.getAllProductos();
                     ObservableList<DatabaseConnection.Producto> data = FXCollections.observableArrayList(productosList);
                     productosTable.setItems(data);
 
+                    System.out.println(productosTable.getItems());
                     break;
                 }
 
@@ -85,7 +99,84 @@ public class HomeController {
     @FXML
     private void handleRegistrarProducto(Event event) {
 
-   }
+        if (ProductoDescripcionTextField.getText().isEmpty() ||
+                ProductoPrecioTextField.getText().isEmpty() || ProductoExistenciaTextField.getText().isEmpty()) {
+            System.out.println("Please fill in all the fields.");
+        } else {
+            try {
+
+
+                String descripcion = ProductoDescripcionTextField.getText();
+                double precio = Double.parseDouble(ProductoPrecioTextField.getText());
+                double existencia = Double.parseDouble(ProductoExistenciaTextField.getText());
+
+
+                if (ProductoClaveTextField.getText().isEmpty()) {
+                    // Insert the new product into the database
+                    DatabaseConnection.insertProducto(descripcion, precio, existencia);
+                } else {
+                    int clave = Integer.parseUnsignedInt(ProductoClaveTextField.getText());
+                    DatabaseConnection.updateProducto(clave, descripcion, precio, existencia);
+
+                }
+                // Clear input fields after insertion
+                ProductoClaveTextField.clear();
+                ProductoDescripcionTextField.clear();
+                ProductoPrecioTextField.clear();
+                ProductoExistenciaTextField.clear();
+
+                // Refresh the TableView with updated data
+                productosList = DatabaseConnection.getAllProductos();
+                ObservableList<DatabaseConnection.Producto> data = FXCollections.observableArrayList(productosList);
+                productosTable.setItems(data);
+
+            } catch (NumberFormatException e) {
+                System.out.println("Please enter valid numbers for 'clave', 'precio', and 'existencia'.");
+            }
+        }
+
+    }
+
+    private void configureTableColumns() {
+        // Clear input fields after insertion
+        ProductoClaveTextField.clear();
+        ProductoDescripcionTextField.clear();
+        ProductoPrecioTextField.clear();
+        ProductoExistenciaTextField.clear();
+
+
+        claveColumn.setCellValueFactory(new PropertyValueFactory<>("clave"));
+        descripcionColumn.setCellValueFactory(new PropertyValueFactory<>("descripcion"));
+        precioColumn.setCellValueFactory(new PropertyValueFactory<>("precio"));
+        existenciaColumn.setCellValueFactory(new PropertyValueFactory<>("existencia"));
+
+        // Define how the editColumn should be rendered
+        editarColumn.setCellFactory(param -> new TableCell<DatabaseConnection.Producto, Void>() {
+            private final Button editButton = new Button("Editar");
+
+            {
+                editButton.setOnAction(event -> {
+                    DatabaseConnection.Producto producto = getTableView().getItems().get(getIndex());
+
+                    ProductoClaveTextField.setText(String.valueOf(producto.getClave()));
+                    ProductoDescripcionTextField.setText(producto.getDescripcion());
+                    ProductoPrecioTextField.setText(String.valueOf(producto.getPrecio()));
+                    ProductoExistenciaTextField.setText(String.valueOf(producto.getExistencia()));
+
+                });
+            }
+
+            @Override
+            protected void updateItem(Void item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty) {
+                    setGraphic(null);
+                } else {
+                    setGraphic(editButton);
+                }
+            }
+        });
+    }
 
     @FXML
     protected void onRegistrarVentaButtonClick(ActionEvent event) throws IOException {

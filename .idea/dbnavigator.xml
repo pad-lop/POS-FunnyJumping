@@ -6,7 +6,7 @@
   </component>
   <component name="DBNavigator.Project.DataEditorManager">
     <record-view-column-sorting-type value="BY_INDEX" />
-    <value-preview-text-wrapping value="true" />
+    <value-preview-text-wrapping value="false" />
     <value-preview-pinned value="false" />
   </component>
   <component name="DBNavigator.Project.DatabaseBrowserManager">
@@ -24,12 +24,18 @@
     <last-used-providers />
   </component>
   <component name="DBNavigator.Project.DatabaseFileManager">
-    <open-files>
-      <object connection-id="2d26b584-8ce3-48af-a54d-012a9f5e6e2b" object-ref="consoles/Connection" />
-    </open-files>
+    <open-files />
   </component>
   <component name="DBNavigator.Project.DatabaseSessionManager">
     <connection id="2d26b584-8ce3-48af-a54d-012a9f5e6e2b" />
+  </component>
+  <component name="DBNavigator.Project.DatasetFilterManager">
+    <filter-actions connection-id="2d26b584-8ce3-48af-a54d-012a9f5e6e2b" dataset="main.sqlite_sequence" active-filter-id="adbe1164-32b5-4916-996f-4dd674b92cfa">
+      <filter id="adbe1164-32b5-4916-996f-4dd674b92cfa" name="Filter 1" temporary="false" custom-name="false" type="basic" join-type="AND" />
+    </filter-actions>
+    <filter-actions connection-id="2d26b584-8ce3-48af-a54d-012a9f5e6e2b" dataset="main.productos" active-filter-id="3b8c492f-b582-4f77-8541-7dc460076bed">
+      <filter id="3b8c492f-b582-4f77-8541-7dc460076bed" name="Filter 1" temporary="false" custom-name="false" type="basic" join-type="AND" />
+    </filter-actions>
   </component>
   <component name="DBNavigator.Project.ExecutionManager">
     <retain-sticky-names value="false" />
@@ -87,7 +93,7 @@
           <session-management value="true" />
           <ddl-file-binding value="true" />
           <database-logging value="true" />
-          <connect-automatically value="true" />
+          <connect-automatically value="false" />
           <restore-workspace value="true" />
           <restore-workspace-deep value="false" />
           <environment-type value="default" />

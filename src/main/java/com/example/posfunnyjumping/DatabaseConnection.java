@@ -7,16 +7,23 @@ import java.util.List;
 public class DatabaseConnection {
 
     private static final String URL = "jdbc:sqlite:funnyJumping.db";
+    private static Connection connection;
 
-    public static Connection connect() {
-        Connection conn = null;
-        try {
-            conn = DriverManager.getConnection(URL);
-            System.out.println("Connection to SQLite has been established.");
-        } catch (SQLException e) {
+   static {
+    try {
+        connection = DriverManager.getConnection(URL);
+        Statement stmt = connection.createStatement();
+        stmt.execute("PRAGMA busy_timeout = 5000"); // Wait up to 5 seconds
+        stmt.close();
+        System.out.println("Connection to SQLite has been established.");
+    } catch (SQLException e) {
             System.out.println(e.getMessage());
-        }
-        return conn;
+
+    }
+}
+
+    public static Connection getConnection() {
+        return connection;
     }
 
     public static void createTableProductos() {
@@ -28,9 +35,8 @@ public class DatabaseConnection {
                  existencia REAL NOT NULL DEFAULT 0
                 );""";
 
-        try (Connection conn = connect();
-             Statement stmt = conn.createStatement()) {
-            stmt.execute(sql);
+        try (PreparedStatement pstmt = getConnection().prepareStatement(sql)) {
+            pstmt.executeUpdate();
         } catch (SQLException e) {
             System.out.println(e.getMessage());
         }
@@ -40,8 +46,8 @@ public class DatabaseConnection {
         String sql = "SELECT * FROM productos";
         List<Producto> productos = new ArrayList<>();
 
-        try (Connection conn = connect();
-             Statement stmt = conn.createStatement();
+        try (
+             Statement stmt = getConnection().createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
 
             while (rs.next()) {
@@ -53,6 +59,7 @@ public class DatabaseConnection {
                 Producto producto = new Producto(clave, descripcion, precio, existencia);
                 productos.add(producto);
             }
+
         } catch (SQLException e) {
             System.out.println(e.getMessage());
         }
@@ -61,26 +68,38 @@ public class DatabaseConnection {
     }
 
     public static void updateProducto(int clave, String descripcion, double precio, double existencia) {
-    String sql = "UPDATE productos SET descripcion = ?, precio = ?, existencia = ? WHERE clave = ?";
+        String sql = "UPDATE productos SET descripcion = ?, precio = ?, existencia = ? WHERE clave = ?";
 
-    try (Connection conn = connect();
-         PreparedStatement pstmt = conn.prepareStatement(sql)) {
-        pstmt.setString(1, descripcion);
-        pstmt.setDouble(2, precio);
-        pstmt.setDouble(3, existencia);
-        pstmt.setInt(4, clave);
-        pstmt.executeUpdate();
-    } catch (SQLException e) {
-        System.out.println(e.getMessage());
+        try (PreparedStatement pstmt = getConnection().prepareStatement(sql)) {
+            pstmt.setString(1, descripcion);
+            pstmt.setDouble(2, precio);
+            pstmt.setDouble(3, existencia);
+            pstmt.setInt(4, clave);
+            pstmt.executeUpdate();
+            pstmt.close();
+
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
+        }
     }
-}
+
+    public static void deleteProducto(int clave) {
+        String sql = "DELETE FROM productos WHERE clave = ?";
+
+        try (PreparedStatement pstmt = getConnection().prepareStatement(sql)) {
+            pstmt.setInt(1, clave);
+            pstmt.executeUpdate();
+
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
+        }
+    }
 
 
     public static void insertProducto(String descripcion, double precio, double existencia) {
         String sql = "INSERT INTO productos(descripcion, precio, existencia) VALUES(?,?,?)";
 
-        try (Connection conn = connect();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        try (PreparedStatement pstmt = getConnection().prepareStatement(sql)) {
             pstmt.setString(1, descripcion);
             pstmt.setDouble(2, precio);
             pstmt.setDouble(3, existencia);

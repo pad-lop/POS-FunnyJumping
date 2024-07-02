@@ -7,14 +7,13 @@ import javafx.scene.Scene;
 import javafx.stage.Stage;
 
 import java.io.IOException;
-import java.util.Objects;
 
-public class Home extends Application {
+public class Main extends Application {
     @Override
     public void start(Stage stage) throws IOException {
         try {
 
-            Parent root = FXMLLoader.load(getClass().getResource("Home.fxml"));
+            Parent root = FXMLLoader.load(getClass().getResource("Temporizador.fxml"));
             Scene scene = new Scene(root);
             stage.setTitle("Funny Jumping");
             stage.setWidth(800);
@@ -22,6 +21,9 @@ public class Home extends Application {
 
             stage.setScene(scene);
             stage.show();
+
+            DatabaseConnection.createTableProductos();
+
         } catch (Exception e) {
             e.printStackTrace();
         }

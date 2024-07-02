@@ -1,6 +1,7 @@
 package com.example.posfunnyjumping;
 
 import java.sql.*;
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -9,18 +10,18 @@ public class DatabaseConnection {
     private static final String URL = "jdbc:sqlite:funnyJumping.db";
     private static Connection connection;
 
-   static {
-    try {
-        connection = DriverManager.getConnection(URL);
-        Statement stmt = connection.createStatement();
-        stmt.execute("PRAGMA busy_timeout = 5000"); // Wait up to 5 seconds
-        stmt.close();
-        System.out.println("Connection to SQLite has been established.");
-    } catch (SQLException e) {
+    static {
+        try {
+            connection = DriverManager.getConnection(URL);
+            Statement stmt = connection.createStatement();
+            stmt.execute("PRAGMA busy_timeout = 5000"); // Wait up to 5 seconds
+            stmt.close();
+            System.out.println("Connection to SQLite has been established.");
+        } catch (SQLException e) {
             System.out.println(e.getMessage());
 
+        }
     }
-}
 
     public static Connection getConnection() {
         return connection;
@@ -42,13 +43,14 @@ public class DatabaseConnection {
         }
     }
 
+
     public static List<Producto> getAllProductos() {
         String sql = "SELECT * FROM productos";
         List<Producto> productos = new ArrayList<>();
 
         try (
-             Statement stmt = getConnection().createStatement();
-             ResultSet rs = stmt.executeQuery(sql)) {
+                Statement stmt = getConnection().createStatement();
+                ResultSet rs = stmt.executeQuery(sql)) {
 
             while (rs.next()) {
                 int clave = rs.getInt("clave");
@@ -142,12 +144,7 @@ public class DatabaseConnection {
 
         @Override
         public String toString() {
-            return "Producto{" +
-                    "clave=" + clave +
-                    ", descripcion='" + descripcion + '\'' +
-                    ", precio=" + precio +
-                    ", existencia=" + existencia +
-                    '}';
+            return MessageFormat.format("Producto'{'clave={0}, descripcion=''{1}'', precio={2}, existencia={3}'}'", clave, descripcion, precio, existencia);
         }
     }
 

@@ -12,7 +12,6 @@ import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.stage.Stage;
-import javafx.scene.control.TabPane;
 import javafx.util.Callback;
 
 import java.io.IOException;
@@ -213,18 +212,6 @@ public class HomeController {
         });
 
     }
-
-
-
-
-
-
-
-
-
-
-
-
 
 
     @FXML

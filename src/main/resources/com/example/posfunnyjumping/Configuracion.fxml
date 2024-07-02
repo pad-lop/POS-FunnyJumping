@@ -49,12 +49,12 @@
     <children>
         <HBox alignment="CENTER" fillHeight="false" spacing="5.0" VBox.vgrow="NEVER">
             <children>
-                <Button mnemonicParsing="false" onAction="#onRegresarAlHomeButtonClick" text="Temporizador" />
+                <Button mnemonicParsing="false" onAction="#onRegresarAlHomeButtonClick" prefHeight="30.0" text="Temporizador" />
                 <Separator visible="false" HBox.hgrow="ALWAYS" />
-                <Button mnemonicParsing="false" onAction="#onConsultaVentasButtonClick" text="Ventas" />
-                <Button mnemonicParsing="false" onAction="#onConsultaComprasButtonClick" text="Compras" />
-                <Button mnemonicParsing="false" onAction="#onConsultaCortesButtonClick" text="Cortes" />
-                <Button mnemonicParsing="false" onAction="#onConfiguracionButtonClick" text="Configuración" />
+                <Button mnemonicParsing="false" onAction="#onConsultaVentasButtonClick" prefHeight="30.0" text="Ventas" />
+                <Button mnemonicParsing="false" onAction="#onConsultaComprasButtonClick" prefHeight="30.0" text="Compras" />
+                <Button mnemonicParsing="false" onAction="#onConsultaCortesButtonClick" prefHeight="30.0" text="Cortes" />
+                <Button mnemonicParsing="false" onAction="#onConfiguracionButtonClick" prefHeight="30.0" text="Configuración" />
             </children>
             <padding>
                 <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
@@ -63,7 +63,7 @@
         <ScrollPane fitToHeight="true" fitToWidth="true" VBox.vgrow="ALWAYS">
             <content>
                 <TabPane fx:id="tabPane" prefHeight="200.0" prefWidth="200.0" tabClosingPolicy="UNAVAILABLE">
-                    <Tab fx:id="Productos" onSelectionChanged="#handleTabOpen" text="Productos">
+                    <Tab fx:id="Productos" closable="false" onSelectionChanged="#handleTabOpen" text="Productos">
                         <content>
                             <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
                                 <children>
@@ -101,7 +101,7 @@
                             </AnchorPane>
                         </content>
                     </Tab>
-                    <Tab fx:id="Tiempos" onSelectionChanged="#handleTabOpen" text="Tiempos">
+                    <Tab fx:id="Tiempos" closable="false" onSelectionChanged="#handleTabOpen" text="Tiempos">
                         <content>
                             <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
                                 <children>
@@ -130,7 +130,7 @@
                             </AnchorPane>
                         </content>
                     </Tab>
-                    <Tab fx:id="Usuarios" onSelectionChanged="#handleTabOpen" text="Usuarios">
+                    <Tab fx:id="Usuarios" closable="false" onSelectionChanged="#handleTabOpen" text="Usuarios">
                         <content>
                             <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
                                 <children>

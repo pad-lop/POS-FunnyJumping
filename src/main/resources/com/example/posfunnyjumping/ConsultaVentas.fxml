@@ -47,12 +47,12 @@
   <children>
       <HBox alignment="CENTER" fillHeight="false" spacing="5.0" VBox.vgrow="NEVER">
          <children>
-            <Button mnemonicParsing="false" onAction="#onRegresarAlHomeButtonClick" text="Temporizador" />
+            <Button mnemonicParsing="false" onAction="#onRegresarAlHomeButtonClick" prefHeight="30.0" text="Temporizador" />
             <Separator visible="false" HBox.hgrow="ALWAYS" />
-            <Button mnemonicParsing="false" onAction="#onConsultaVentasButtonClick" text="Ventas" />
-            <Button mnemonicParsing="false" onAction="#onConsultaComprasButtonClick" text="Compras" />
-            <Button mnemonicParsing="false" onAction="#onConsultaCortesButtonClick" text="Cortes" />
-             <Button mnemonicParsing="false" onAction="#onConfiguracionButtonClick" text="Configuración" />
+            <Button mnemonicParsing="false" onAction="#onConsultaVentasButtonClick" prefHeight="30.0" text="Ventas" />
+            <Button mnemonicParsing="false" onAction="#onConsultaComprasButtonClick" prefHeight="30.0" text="Compras" />
+            <Button mnemonicParsing="false" onAction="#onConsultaCortesButtonClick" prefHeight="30.0" text="Cortes" />
+             <Button mnemonicParsing="false" onAction="#onConfiguracionButtonClick" prefHeight="30.0" text="Configuración" />
          </children>
          <padding>
             <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
@@ -70,7 +70,7 @@
                </padding>
             </Label>
             <Separator maxWidth="1.7976931348623157E308" visible="false" HBox.hgrow="ALWAYS" />
-            <Button mnemonicParsing="false" text="Registrar Venta" />
+            <Button mnemonicParsing="false" prefHeight="30.0" text="Registrar Venta" />
             <Separator maxWidth="1.7976931348623157E308" visible="false" />
          </children>
          <padding>

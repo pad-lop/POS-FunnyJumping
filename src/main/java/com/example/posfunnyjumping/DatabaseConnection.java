@@ -43,6 +43,21 @@ public class DatabaseConnection {
         }
     }
 
+    public static void createTableTiempos() {
+        String sql = """
+                CREATE TABLE IF NOT EXISTS tiempos (
+                 clave integer PRIMARY KEY AUTOINCREMENT,
+                 minutos real NOT NULL,
+                 precio real NOT NULL DEFAULT 0
+                );""";
+
+        try (PreparedStatement pstmt = getConnection().prepareStatement(sql)) {
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
+        }
+    }
+
 
     public static List<Producto> getAllProductos() {
         String sql = "SELECT * FROM productos";
@@ -69,6 +84,30 @@ public class DatabaseConnection {
         return productos;
     }
 
+    public static List<Tiempo> getAllTiempos(){
+        String sql = "SELECT * FROM tiempos";
+        List<Tiempo> tiempos = new ArrayList<>();
+
+        try (
+                Statement stmt = getConnection().createStatement();
+                ResultSet rs = stmt.executeQuery(sql)
+                ){
+            while(rs.next()){
+                int clave = rs.getInt("clave");
+                int minutos = rs.getInt("minutos");
+                double precio = rs.getDouble("precio");
+
+                Tiempo tiempo = new Tiempo(clave, minutos, precio);
+                tiempos.add(tiempo);
+            }
+
+        } catch(SQLException e){
+            System.out.println(e.getMessage());
+        }
+        return tiempos;
+
+    }
+
     public static void updateProducto(int clave, String descripcion, double precio, double existencia) {
         String sql = "UPDATE productos SET descripcion = ?, precio = ?, existencia = ? WHERE clave = ?";
 
@@ -78,15 +117,40 @@ public class DatabaseConnection {
             pstmt.setDouble(3, existencia);
             pstmt.setInt(4, clave);
             pstmt.executeUpdate();
-            pstmt.close();
 
         } catch (SQLException e) {
             System.out.println(e.getMessage());
         }
     }
 
+    public static void updateTiempo(int clave, int minutos, double precio){
+        String sql = "UPDATE tiempos SET minutos = ?, precio = ? WHERE clave = ?";
+
+        try (PreparedStatement pstmt = getConnection().prepareStatement(sql)) {
+            pstmt.setInt(1,minutos);
+            pstmt.setDouble(2, precio);
+            pstmt.setInt(3, clave);
+            pstmt.executeUpdate();
+        }
+        catch (SQLException e){
+            System.out.println(e.getMessage());
+        }
+    }
+
     public static void deleteProducto(int clave) {
         String sql = "DELETE FROM productos WHERE clave = ?";
+
+        try (PreparedStatement pstmt = getConnection().prepareStatement(sql)) {
+            pstmt.setInt(1, clave);
+            pstmt.executeUpdate();
+
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
+        }
+    }
+
+      public static void deleteTiempo(int clave) {
+        String sql = "DELETE FROM tiempos WHERE clave = ?";
 
         try (PreparedStatement pstmt = getConnection().prepareStatement(sql)) {
             pstmt.setInt(1, clave);
@@ -111,6 +175,18 @@ public class DatabaseConnection {
         }
     }
 
+    public static void insertTiempo(int minutos, double precio){
+        String sql = "INSERT INTO tiempos(minutos, precio) VALUES (?,?)";
+
+        try (PreparedStatement pstmt = getConnection().prepareStatement(sql)) {
+            pstmt.setInt(1, minutos);
+            pstmt.setDouble(2, precio);
+            pstmt.executeUpdate();
+        }
+        catch (SQLException e){
+            System.out.println(e.getMessage());
+        }
+    }
 
     public static class Producto {
         private final int clave;
@@ -148,5 +224,28 @@ public class DatabaseConnection {
         }
     }
 
+    public static class Tiempo {
+        private final int clave;
+        private final int minutos;
+        private final double precio;
+
+        public Tiempo(int clave, int minutos, double precio) {
+            this.clave = clave;
+            this.minutos = minutos;
+            this.precio = precio;
+        }
+
+        public int getClave() {
+            return clave;
+        }
+
+        public int getMinutos() {
+            return minutos;
+        }
+
+        public double getPrecio() {
+            return precio;
+        }
+    }
 
 }

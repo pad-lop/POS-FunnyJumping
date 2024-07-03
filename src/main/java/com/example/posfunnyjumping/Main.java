@@ -13,6 +13,8 @@ public class Main extends Application {
     @Override
     public void start(Stage stage) throws IOException {
         try {
+            DatabaseConnection.createTableProductos();
+            DatabaseConnection.createTableTiempos();
 
             Parent root = FXMLLoader.load(Objects.requireNonNull(getClass().getResource("Temporizador.fxml")));
             Scene scene = new Scene(root);
@@ -23,7 +25,6 @@ public class Main extends Application {
             stage.setScene(scene);
             stage.show();
 
-            DatabaseConnection.createTableProductos();
 
         } catch (Exception e) {
             e.printStackTrace();

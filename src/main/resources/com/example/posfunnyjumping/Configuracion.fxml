@@ -38,14 +38,10 @@
 <?import javafx.scene.control.Separator?>
 <?import javafx.scene.control.Tab?>
 <?import javafx.scene.control.TabPane?>
-<?import javafx.scene.control.TableColumn?>
-<?import javafx.scene.control.TableView?>
-<?import javafx.scene.control.TextField?>
-<?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.VBox?>
 
-<VBox prefHeight="591.0" prefWidth="889.0" xmlns="http://javafx.com/javafx/22" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.example.posfunnyjumping.HomeController">
+<VBox prefHeight="591.0" prefWidth="889.0" xmlns="http://javafx.com/javafx/22" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.example.posfunnyjumping.ConfiguracionController">
     <children>
         <HBox alignment="CENTER" fillHeight="false" spacing="5.0" VBox.vgrow="NEVER">
             <children>
@@ -63,101 +59,14 @@
         <ScrollPane fitToHeight="true" fitToWidth="true" VBox.vgrow="ALWAYS">
             <content>
                 <TabPane fx:id="tabPane" prefHeight="200.0" prefWidth="200.0" tabClosingPolicy="UNAVAILABLE">
-                    <Tab fx:id="Productos" closable="false" onSelectionChanged="#handleTabOpen" text="Productos">
-                        <content>
-                            <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
-                                <children>
-                                    <HBox layoutX="37.0" layoutY="63.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
-                                        <children>
-                                            <TableView fx:id="productosTable" prefHeight="200.0" prefWidth="200.0" HBox.hgrow="ALWAYS">
-                                                <columns>
-                                                    <TableColumn fx:id="claveColumn" editable="false" prefWidth="75.0" sortable="false" text="Clave" />
-                                                    <TableColumn fx:id="descripcionColumn" editable="false" prefWidth="75.0" sortable="false" text="Descripcion" />
-                                                    <TableColumn fx:id="precioColumn" editable="false" prefWidth="75.0" sortable="false" text="Precio" />
-                                                    <TableColumn fx:id="existenciaColumn" editable="false" prefWidth="75.0" sortable="false" text="Existencia" />
-                                       <TableColumn prefWidth="75.0" text="Acciones">
-                                          <columns>
-                                             <TableColumn fx:id="editarColumn" editable="false" prefWidth="75.0" sortable="false" text="Editar" />
-                                             <TableColumn fx:id="eliminarColumn" editable="false" prefWidth="75.0" sortable="false" text="Eliminar" />
-                                          </columns>
-                                       </TableColumn>
-                                                </columns>
-                                    <columnResizePolicy>
-                                       <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
-                                    </columnResizePolicy>
-                                            </TableView>
-                                            <VBox alignment="CENTER" prefHeight="200.0" prefWidth="100.0">
-                                                <children>
-                                                    <TextField fx:id="ProductoClaveTextField" editable="false" minWidth="200.0" promptText="Clave" />
-                                                    <TextField fx:id="ProductoDescripcionTextField" minWidth="200.0" promptText="Descripcion" />
-                                                    <TextField fx:id="ProductoPrecioTextField" promptText="Precio" />
-                                                    <TextField fx:id="ProductoExistenciaTextField" promptText="Existencia" />
-                                                    <Button maxWidth="-Infinity" minWidth="-Infinity" mnemonicParsing="false" onAction="#handleRegistrarProducto" text="Agregar" VBox.vgrow="ALWAYS" />
-                                                </children>
-                                            </VBox>
-                                        </children>
-                                    </HBox>
-                                </children>
-                            </AnchorPane>
-                        </content>
+                    <Tab fx:id="Productos" closable="false" text="Productos">
+                      <fx:include source="TabProductos.fxml" />
                     </Tab>
-                    <Tab fx:id="Tiempos" closable="false" onSelectionChanged="#handleTabOpen" text="Tiempos">
-                        <content>
-                            <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
-                                <children>
-                                    <HBox AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
-                                        <children>
-                                            <TableView prefHeight="200.0" prefWidth="200.0" HBox.hgrow="ALWAYS">
-                                                <columns>
-                                                    <TableColumn prefWidth="75.0" text="Clave" />
-                                                    <TableColumn prefWidth="75.0" text="Tiempo" />
-                                       <TableColumn prefWidth="75.0" text="Precio" />
-                                                </columns>
-                                    <columnResizePolicy>
-                                       <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
-                                    </columnResizePolicy>
-                                            </TableView>
-                                            <VBox alignment="CENTER" prefHeight="200.0" prefWidth="100.0">
-                                                <children>
-                                                    <TextField minWidth="200.0" promptText="Tiempo" />
-                                                    <TextField promptText="Precio" />
-                                                    <Button maxWidth="-Infinity" minWidth="-Infinity" mnemonicParsing="false" text="Agregar" VBox.vgrow="ALWAYS" />
-                                                </children>
-                                            </VBox>
-                                        </children>
-                                    </HBox>
-                                </children>
-                            </AnchorPane>
-                        </content>
+                    <Tab fx:id="Tiempos" closable="false" text="Tiempos">
+                      <fx:include source="TabTiempos.fxml" />
                     </Tab>
-                    <Tab fx:id="Usuarios" closable="false" onSelectionChanged="#handleTabOpen" text="Usuarios">
-                        <content>
-                            <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
-                                <children>
-                                    <HBox AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
-                                        <children>
-                                            <TableView prefHeight="200.0" prefWidth="200.0" HBox.hgrow="ALWAYS">
-                                                <columns>
-                                       <TableColumn prefWidth="75.0" text="Clave" />
-                                                    <TableColumn prefWidth="75.0" text="Nombre" />
-                                                    <TableColumn prefWidth="75.0" text="Contraseña" />
-                                                </columns>
-                                    <columnResizePolicy>
-                                       <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
-                                    </columnResizePolicy>
-                                            </TableView>
-                                            <VBox alignment="CENTER" prefHeight="200.0" prefWidth="100.0">
-                                                <children>
-                                                    <TextField minWidth="200.0" promptText="Nombre" />
-                                                    <TextField promptText="Contraseña" />
-                                                    <Button maxWidth="-Infinity" minWidth="-Infinity" mnemonicParsing="false" text="Agregar" VBox.vgrow="ALWAYS" />
-                                                </children>
-                                            </VBox>
-                                        </children>
-                                    </HBox>
-                                </children>
-                            </AnchorPane>
-                        </content>
+                    <Tab fx:id="Usuarios" closable="false" text="Usuarios">
+                      <fx:include source="TabUsuarios.fxml" />
                     </Tab>
                 </TabPane>
             </content>

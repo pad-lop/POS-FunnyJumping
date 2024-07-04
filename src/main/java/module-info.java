@@ -1,6 +1,7 @@
 module com.example.posfunnyjumping {
     requires javafx.controls;
     requires javafx.fxml;
+    requires javafx.graphics;
 
     requires org.controlsfx.controls;
     requires com.dlsc.formsfx;
@@ -10,6 +11,5 @@ module com.example.posfunnyjumping {
     requires java.sql;
 
 
-    opens com.example.posfunnyjumping to javafx.fxml;
-    exports com.example.posfunnyjumping;
+    opens com.example.posfunnyjumping;
 }

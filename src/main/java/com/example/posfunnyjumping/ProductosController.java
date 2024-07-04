@@ -10,7 +10,7 @@ import javafx.scene.control.cell.PropertyValueFactory;
 import java.util.List;
 import java.util.function.Consumer;
 
-public class ProductosController{
+public class ProductosController {
 
     @FXML
     private TableColumn<DatabaseConnection.Producto, Integer> productoClaveColumn;
@@ -35,10 +35,9 @@ public class ProductosController{
     private TextField productoExistenciaTextField;
     @FXML
     private TableView<DatabaseConnection.Producto> productosTable;
-    private List<DatabaseConnection.Producto> productosList;
 
 
-      @FXML
+    @FXML
     private void initialize() {
         initializeProductosTableColumns();
     }
@@ -111,8 +110,6 @@ public class ProductosController{
     }
 
 
-
-
     private void clearProductInputFields() {
         productoClaveTextField.clear();
         productoDescripcionTextField.clear();
@@ -149,10 +146,11 @@ public class ProductosController{
     }
 
     private void loadProductosData() {
-        productosList = DatabaseConnection.getAllProductos();
+        List<DatabaseConnection.Producto> productosList = DatabaseConnection.getAllProductos();
         productosTable.setItems(FXCollections.observableArrayList(productosList));
         productosTable.refresh();
     }
+
     private void editProducto(DatabaseConnection.Producto producto) {
         populateProductoFields(producto);
     }
@@ -163,8 +161,6 @@ public class ProductosController{
             productosTable.getItems().remove(producto);
         }
     }
-
-
 
 
 }

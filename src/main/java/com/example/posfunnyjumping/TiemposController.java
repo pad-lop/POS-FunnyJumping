@@ -32,7 +32,6 @@ public class TiemposController  {
 
     @FXML
     private TableView<DatabaseConnection.Tiempo> tiemposTable;
-    private List<DatabaseConnection.Tiempo> tiemposList;
 
     @FXML
     private void initialize() {
@@ -143,7 +142,7 @@ public class TiemposController  {
 
 
     private void loadTiemposData() {
-        tiemposList = DatabaseConnection.getAllTiempos();
+        List<DatabaseConnection.Tiempo> tiemposList = DatabaseConnection.getAllTiempos();
         tiemposTable.setItems(FXCollections.observableArrayList(tiemposList));
         tiemposTable.refresh();
 

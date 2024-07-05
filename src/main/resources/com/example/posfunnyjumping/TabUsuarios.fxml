@@ -14,10 +14,10 @@
           AnchorPane.topAnchor="0.0">
         <TableView prefHeight="200.0" prefWidth="200.0" HBox.hgrow="ALWAYS">
             <columns>
-                <TableColumn prefWidth="75.0" text="Clave"/>
-                <TableColumn prefWidth="75.0" text="Nombre"/>
-                <TableColumn prefWidth="75.0" text="Contraseña"/>
-                <TableColumn prefWidth="75.0" text="Acciones">
+                <TableColumn editable="false" prefWidth="75.0" text="Clave"/>
+                <TableColumn editable="false" prefWidth="75.0" text="Nombre"/>
+                <TableColumn editable="false" prefWidth="75.0" text="Contraseña"/>
+                <TableColumn editable="false" prefWidth="75.0" text="Acciones">
                     <columns>
                         <TableColumn editable="false" prefWidth="75.0"
                                      sortable="false" text="Editar"/>

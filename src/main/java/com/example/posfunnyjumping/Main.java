@@ -15,6 +15,8 @@ public class Main extends Application {
         try {
             DatabaseConnection.createTableProductos();
             DatabaseConnection.createTableTiempos();
+            DatabaseConnection.createTableVentas();
+            DatabaseConnection.createTablePartidasVentas();
 
             Parent root = FXMLLoader.load(Objects.requireNonNull(getClass().getResource("Temporizador.fxml")));
             Scene scene = new Scene(root);

@@ -47,10 +47,9 @@
   <children>
       <HBox alignment="CENTER" fillHeight="false" spacing="5.0" VBox.vgrow="NEVER">
          <children>
-            <Button mnemonicParsing="false" onAction="#onRegresarAlHomeButtonClick" prefHeight="30.0" text="Temporizador" />
+            <Button defaultButton="true" mnemonicParsing="false" onAction="#onTemporizadorButtonClick" prefHeight="30.0" text="Temporizador" />
             <Separator visible="false" HBox.hgrow="ALWAYS" />
             <Button mnemonicParsing="false" onAction="#onConsultaVentasButtonClick" prefHeight="30.0" text="Ventas" />
-            <Button mnemonicParsing="false" onAction="#onConsultaComprasButtonClick" prefHeight="30.0" text="Compras" />
             <Button mnemonicParsing="false" onAction="#onConsultaCortesButtonClick" prefHeight="30.0" text="Cortes" />
              <Button mnemonicParsing="false" onAction="#onConfiguracionButtonClick" prefHeight="30.0" text="Configuración" />
 

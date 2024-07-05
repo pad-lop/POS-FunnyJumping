@@ -33,11 +33,7 @@ public class ConfiguracionController {
     }
 
 
-    @FXML
-    protected void onConsultaComprasButtonClick(ActionEvent event) throws IOException {
-        navigateTo("ConsultaCompras.fxml", event);
 
-    }
 
     @FXML
     protected void onConsultaCortesButtonClick(ActionEvent event) throws IOException {
@@ -52,7 +48,7 @@ public class ConfiguracionController {
     }
 
     @FXML
-    protected void onRegresarAlHomeButtonClick(ActionEvent event) throws IOException {
+    protected void onTemporizadorButtonClick(ActionEvent event) throws IOException {
         navigateTo("Temporizador.fxml", event);
 
     }

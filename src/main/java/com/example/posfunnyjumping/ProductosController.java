@@ -24,7 +24,6 @@ public class ProductosController {
     private TableColumn<DatabaseConnection.Producto, Void> productoEditarColumn; // Define as Void for buttons
     @FXML
     private TableColumn<DatabaseConnection.Producto, Void> productoEliminarColumn; // Define as Void for buttons
-
     @FXML
     private TextField productoClaveTextField;
     @FXML

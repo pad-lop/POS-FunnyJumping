@@ -26,14 +26,12 @@ public class HomeController {
     private Parent root;
 
 
-    @FXML
+
+
+
+        @FXML
     protected void onRegistrarVentaButtonClick(ActionEvent event) throws IOException {
-        Parent root;
-        root = FXMLLoader.load(Objects.requireNonNull(getClass().getResource("RegistrarVenta.fxml")));
-        stage = (Stage) (((Node) event.getSource()).getScene().getWindow());
-        scene = new Scene(root);
-        stage.setScene(scene);
-        stage.show();
+        navigateTo("RegistrarVenta.fxml", event);
     }
 
 
@@ -52,11 +50,7 @@ public class HomeController {
     }
 
 
-    @FXML
-    protected void onConsultaComprasButtonClick(ActionEvent event) throws IOException {
-        navigateTo("ConsultaCompras.fxml", event);
 
-    }
 
     @FXML
     protected void onConsultaCortesButtonClick(ActionEvent event) throws IOException {
@@ -71,7 +65,7 @@ public class HomeController {
     }
 
     @FXML
-    protected void onRegresarAlHomeButtonClick(ActionEvent event) throws IOException {
+    protected void onTemporizadorButtonClick(ActionEvent event) throws IOException {
         navigateTo("Temporizador.fxml", event);
 
     }

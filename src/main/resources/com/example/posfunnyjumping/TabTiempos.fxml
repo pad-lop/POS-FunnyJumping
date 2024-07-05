@@ -14,10 +14,10 @@
           AnchorPane.topAnchor="0.0">
         <TableView fx:id="tiemposTable" prefHeight="200.0" prefWidth="200.0" HBox.hgrow="ALWAYS">
             <columns>
-                <TableColumn fx:id="tiempoClaveColumn" prefWidth="75.0" text="Clave"/>
-                <TableColumn fx:id="tiempoMinutosColumn" prefWidth="75.0" text="Minutos"/>
-                <TableColumn fx:id="tiempoPrecioColumn" prefWidth="75.0" text="Precio"/>
-                <TableColumn prefWidth="75.0" text="Acciones">
+                <TableColumn editable="false"  sortable="false" fx:id="tiempoClaveColumn" prefWidth="75.0" text="Clave"/>
+                <TableColumn editable="false"  sortable="false" fx:id="tiempoMinutosColumn" prefWidth="75.0" text="Minutos"/>
+                <TableColumn editable="false"  sortable="false" fx:id="tiempoPrecioColumn" prefWidth="75.0" text="Precio"/>
+                <TableColumn editable="false"  sortable="false" prefWidth="75.0" text="Acciones">
                     <columns>
                         <TableColumn fx:id="tiempoEditarColumn" editable="false" prefWidth="75.0"
                                      sortable="false" text="Editar"/>

@@ -9,6 +9,8 @@ module com.example.posfunnyjumping {
     requires org.kordamp.ikonli.javafx;
     requires org.kordamp.bootstrapfx.core;
     requires java.sql;
+    requires com.zaxxer.hikari;
+    requires org.slf4j;
 
 
     opens com.example.posfunnyjumping;

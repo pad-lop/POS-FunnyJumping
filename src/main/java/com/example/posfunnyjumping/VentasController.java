@@ -21,32 +21,32 @@ public class VentasController {
 
 
     @FXML
-    private TableColumn<DatabaseConnection.Venta, Integer> ventaFolioColumn;
+    private TableColumn<DatabaseConnectionBackup2.Venta, Integer> ventaFolioColumn;
     @FXML
-    private TableColumn<DatabaseConnection.Venta, Date> ventaFechaColumn;
+    private TableColumn<DatabaseConnectionBackup2.Venta, Date> ventaFechaColumn;
     @FXML
-    private TableColumn<DatabaseConnection.Venta, Double> ventaTotalColumn;
+    private TableColumn<DatabaseConnectionBackup2.Venta, Double> ventaTotalColumn;
     /*
     @FXML
     private TableColumn<DatabaseConnection.Venta, Integer> ventaCorteColumn;
     */
     @FXML
-    private TableColumn<DatabaseConnection.Venta, Void> ventaDetallesColumn;
+    private TableColumn<DatabaseConnectionBackup2.Venta, Void> ventaDetallesColumn;
 
     @FXML
-    private TableView<DatabaseConnection.Venta> ventasTable;
+    private TableView<DatabaseConnectionBackup2.Venta> ventasTable;
 
 
     @FXML
-    private TableColumn<DatabaseConnection.PartidaVenta, Integer> ventaPartidaCantidadColumn;
+    private TableColumn<DatabaseConnectionBackup2.PartidaVenta, Integer> ventaPartidaCantidadColumn;
     @FXML
-    private TableColumn<DatabaseConnection.PartidaVenta, String> ventaPartidaDescripcionColumn;
+    private TableColumn<DatabaseConnectionBackup2.PartidaVenta, String> ventaPartidaDescripcionColumn;
     @FXML
-    private TableColumn<DatabaseConnection.PartidaVenta, Double> ventaPartidaPrecioColumn;
+    private TableColumn<DatabaseConnectionBackup2.PartidaVenta, Double> ventaPartidaPrecioColumn;
     @FXML
-    private TableColumn<DatabaseConnection.PartidaVenta, Double> ventaPartidaSubtotalColumn;
+    private TableColumn<DatabaseConnectionBackup2.PartidaVenta, Double> ventaPartidaSubtotalColumn;
     @FXML
-    private TableView<DatabaseConnection.PartidaVenta> ventaDetallesTableView;
+    private TableView<DatabaseConnectionBackup2.PartidaVenta> ventaDetallesTableView;
     @FXML
     private TextField ventaDetallesFolioTextField;
     @FXML
@@ -105,7 +105,7 @@ public class VentasController {
     }
 
     @FXML
-    private void detallesVenta(DatabaseConnection.Venta venta) {
+    private void detallesVenta(DatabaseConnectionBackup2.Venta venta) {
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("DetallesVenta.fxml"));
             loader.setController(this);
@@ -123,13 +123,13 @@ public class VentasController {
         }
     }
 
-    private void populateDetallesVenta(DatabaseConnection.Venta venta) {
+    private void populateDetallesVenta(DatabaseConnectionBackup2.Venta venta) {
         ventaDetallesFolioTextField.setText(String.valueOf(venta.getClaveVenta()));
         ventaDetallesFechaTextField.setText(venta.getFechaVenta().toString());
         ventaDetallesTotalTextField.setText(String.valueOf(venta.getTotal()));
 
         // Load the partidas for this venta
-        List<DatabaseConnection.PartidaVenta> partidas = DatabaseConnection.getPartidasVentaByClaveVenta(venta.getClaveVenta());
+        List<DatabaseConnectionBackup2.PartidaVenta> partidas = DatabaseConnectionBackup2.getPartidasVentaByClaveVenta(venta.getClaveVenta());
         ventaDetallesTableView.setItems(FXCollections.observableArrayList(partidas));
     }
 
@@ -154,7 +154,7 @@ public class VentasController {
 
 
     private void loadVentasData() {
-        List<DatabaseConnection.Venta> ventasList = DatabaseConnection.getAllVentas();
+        List<DatabaseConnectionBackup2.Venta> ventasList = DatabaseConnectionBackup2.getAllVentas();
         ventasTable.setItems(FXCollections.observableArrayList(ventasList));
         ventasTable.refresh();
     }

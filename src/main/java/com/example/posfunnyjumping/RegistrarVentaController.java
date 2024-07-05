@@ -16,50 +16,30 @@ import javafx.util.StringConverter;
 import java.sql.Date;
 
 import java.io.IOException;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.*;
 
 
-import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
-import javafx.event.ActionEvent;
-import javafx.fxml.FXML;
-import javafx.fxml.FXMLLoader;
-import javafx.scene.Node;
-import javafx.scene.Parent;
-import javafx.scene.Scene;
-import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
-import javafx.stage.Stage;
-import javafx.util.Callback;
-import javafx.util.StringConverter;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Consumer;
-
-import static com.example.posfunnyjumping.DatabaseConnection.getConnection;
 
 public class RegistrarVentaController {
 
     @FXML
     private TextField agregarNombreTextField;
     @FXML
-    private ComboBox<DatabaseConnection.Tiempo> minutosComboBox;
+    private ComboBox<DatabaseConnectionBackup2.Tiempo> minutosComboBox;
     @FXML
-    private TableView<DatabaseConnection.Producto> productosTableView;
+    private TableView<DatabaseConnectionBackup2.Producto> productosTableView;
     @FXML
-    private TableColumn<DatabaseConnection.Producto, String> productoDescripcionColumn;
+    private TableColumn<DatabaseConnectionBackup2.Producto, String> productoDescripcionColumn;
     @FXML
-    private TableColumn<DatabaseConnection.Producto, Double> productoPrecioColumn;
+    private TableColumn<DatabaseConnectionBackup2.Producto, Double> productoPrecioColumn;
     @FXML
-    private TableColumn<DatabaseConnection.Producto, Double> productoExistenciaColumn;
+    private TableColumn<DatabaseConnectionBackup2.Producto, Double> productoExistenciaColumn;
     @FXML
-    private TableColumn<DatabaseConnection.Producto, Void> productoAgregarColumn;
+    private TableColumn<DatabaseConnectionBackup2.Producto, Void> productoAgregarColumn;
     @FXML
     private TableView<OrdenItem> ordenTableView;
     @FXML
@@ -88,16 +68,16 @@ public class RegistrarVentaController {
     }
 
     private void initializeTiemposComboBox() {
-        List<DatabaseConnection.Tiempo> tiemposList = DatabaseConnection.getAllTiempos();
-        ObservableList<DatabaseConnection.Tiempo> observableTiempos = FXCollections.observableArrayList(tiemposList);
+        List<DatabaseConnectionBackup2.Tiempo> tiemposList = DatabaseConnectionBackup2.getAllTiempos();
+        ObservableList<DatabaseConnectionBackup2.Tiempo> observableTiempos = FXCollections.observableArrayList(tiemposList);
         minutosComboBox.setItems(observableTiempos);
 
-        minutosComboBox.setCellFactory(new Callback<ListView<DatabaseConnection.Tiempo>, ListCell<DatabaseConnection.Tiempo>>() {
+        minutosComboBox.setCellFactory(new Callback<ListView<DatabaseConnectionBackup2.Tiempo>, ListCell<DatabaseConnectionBackup2.Tiempo>>() {
             @Override
-            public ListCell<DatabaseConnection.Tiempo> call(ListView<DatabaseConnection.Tiempo> param) {
-                return new ListCell<DatabaseConnection.Tiempo>() {
+            public ListCell<DatabaseConnectionBackup2.Tiempo> call(ListView<DatabaseConnectionBackup2.Tiempo> param) {
+                return new ListCell<DatabaseConnectionBackup2.Tiempo>() {
                     @Override
-                    protected void updateItem(DatabaseConnection.Tiempo item, boolean empty) {
+                    protected void updateItem(DatabaseConnectionBackup2.Tiempo item, boolean empty) {
                         super.updateItem(item, empty);
                         if (item == null || empty) {
                             setText(null);
@@ -109,9 +89,9 @@ public class RegistrarVentaController {
             }
         });
 
-        minutosComboBox.setConverter(new StringConverter<DatabaseConnection.Tiempo>() {
+        minutosComboBox.setConverter(new StringConverter<DatabaseConnectionBackup2.Tiempo>() {
             @Override
-            public String toString(DatabaseConnection.Tiempo tiempo) {
+            public String toString(DatabaseConnectionBackup2.Tiempo tiempo) {
                 if (tiempo == null) {
                     return null;
                 }
@@ -119,7 +99,7 @@ public class RegistrarVentaController {
             }
 
             @Override
-            public DatabaseConnection.Tiempo fromString(String string) {
+            public DatabaseConnectionBackup2.Tiempo fromString(String string) {
                 return null;
             }
         });
@@ -131,7 +111,7 @@ public class RegistrarVentaController {
         productoPrecioColumn.setCellValueFactory(new PropertyValueFactory<>("precio"));
         productoAgregarColumn.setCellFactory(param -> createButtonCell("Agregar", this::agregarProducto));
 
-        List<DatabaseConnection.Producto> productosList = DatabaseConnection.getAllProductos();
+        List<DatabaseConnectionBackup2.Producto> productosList = DatabaseConnectionBackup2.getAllProductos();
         productosTableView.setItems(FXCollections.observableArrayList(productosList));
     }
 
@@ -166,7 +146,7 @@ public class RegistrarVentaController {
 
     @FXML
     private void agregarTrampolin() {
-        DatabaseConnection.Tiempo selectedTiempo = minutosComboBox.getValue();
+        DatabaseConnectionBackup2.Tiempo selectedTiempo = minutosComboBox.getValue();
         String nombre = agregarNombreTextField.getText().trim();
 
         if (selectedTiempo != null && !nombre.isEmpty()) {
@@ -181,7 +161,7 @@ public class RegistrarVentaController {
         }
     }
 
-    private void agregarProducto(DatabaseConnection.Producto producto) {
+    private void agregarProducto(DatabaseConnectionBackup2.Producto producto) {
         OrdenItem existingItem = ordenItems.stream().filter(item -> item.getDescripcion().equals(producto.getDescripcion())).findFirst().orElse(null);
 
         if (existingItem != null) {
@@ -308,18 +288,18 @@ public class RegistrarVentaController {
         // Insert venta
         Date fechaVenta = new java.sql.Date(System.currentTimeMillis());
 
-        DatabaseConnection.insertVenta(fechaVenta, total);
+        DatabaseConnectionBackup2.insertVenta(fechaVenta, total);
 
         // Get the clave_venta (assuming it's the last inserted ID)
-        int claveVenta = DatabaseConnection.getLastInsertedId("ventas");
+        int claveVenta = DatabaseConnectionBackup2.getLastInsertedId("ventas");
 
         // Insert partidas_ventas
         for (OrdenItem item : ordenItems) {
 
             if (item.isTrampolinTiempo) {
-                DatabaseConnection.insertTiempoPartidaVenta(claveVenta, item.getClave(), item.getMinutosTrampolin(), item.getNombreTrampolin(), item.getPrecio(), item.getDescripcion());
+                DatabaseConnectionBackup2.insertTiempoPartidaVenta(claveVenta, item.getClave(), item.getMinutosTrampolin(), item.getNombreTrampolin(), item.getPrecio(), item.getDescripcion());
             } else {
-                DatabaseConnection.insertProductoPartidaVenta(claveVenta, item.getClave(), item.getCantidad(), item.getPrecio(), item.getSubtotal(), item.getDescripcion());
+                DatabaseConnectionBackup2.insertProductoPartidaVenta(claveVenta, item.getClave(), item.getCantidad(), item.getPrecio(), item.getSubtotal(), item.getDescripcion());
             }
 
         }

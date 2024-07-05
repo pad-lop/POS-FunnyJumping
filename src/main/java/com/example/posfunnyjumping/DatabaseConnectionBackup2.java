@@ -5,7 +5,7 @@ import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
 
-public class DatabaseConnection {
+public class DatabaseConnectionBackup2 {
 
     private static final String URL = "jdbc:sqlite:funnyJumping.db";
     private static Connection connection;

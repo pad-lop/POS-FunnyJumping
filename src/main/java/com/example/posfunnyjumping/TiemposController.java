@@ -1,7 +1,6 @@
 package com.example.posfunnyjumping;
 
 import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
@@ -13,15 +12,15 @@ import java.util.function.Consumer;
 public class TiemposController  {
 
     @FXML
-    private TableColumn<DatabaseConnection.Tiempo, Integer> tiempoClaveColumn;
+    private TableColumn<DatabaseConnectionBackup2.Tiempo, Integer> tiempoClaveColumn;
     @FXML
-    private TableColumn<DatabaseConnection.Tiempo, Integer> tiempoMinutosColumn;
+    private TableColumn<DatabaseConnectionBackup2.Tiempo, Integer> tiempoMinutosColumn;
     @FXML
-    private TableColumn<DatabaseConnection.Tiempo, Double> tiempoPrecioColumn;
+    private TableColumn<DatabaseConnectionBackup2.Tiempo, Double> tiempoPrecioColumn;
     @FXML
-    private TableColumn<DatabaseConnection.Tiempo, Void> tiempoEditarColumn;
+    private TableColumn<DatabaseConnectionBackup2.Tiempo, Void> tiempoEditarColumn;
     @FXML
-    private TableColumn<DatabaseConnection.Tiempo, Void> tiempoEliminarColumn;
+    private TableColumn<DatabaseConnectionBackup2.Tiempo, Void> tiempoEliminarColumn;
 
     @FXML
     public TextField tiempoClaveTextField;
@@ -31,7 +30,7 @@ public class TiemposController  {
     private TextField tiempoPrecioTextField;
 
     @FXML
-    private TableView<DatabaseConnection.Tiempo> tiemposTable;
+    private TableView<DatabaseConnectionBackup2.Tiempo> tiemposTable;
 
     @FXML
     private void initialize() {
@@ -85,10 +84,10 @@ public class TiemposController  {
             double precio = Double.parseDouble(tiempoPrecioTextField.getText());
 
             if (tiempoClaveTextField.getText().isEmpty()) {
-                DatabaseConnection.insertTiempo(minutos, precio);
+                DatabaseConnectionBackup2.insertTiempo(minutos, precio);
             } else {
                 int clave = Integer.parseInt(tiempoClaveTextField.getText());
-                DatabaseConnection.updateTiempo(clave, minutos, precio);
+                DatabaseConnectionBackup2.updateTiempo(clave, minutos, precio);
             }
 
             initializeTiemposTableColumns();
@@ -111,7 +110,7 @@ public class TiemposController  {
         tiempoPrecioTextField.clear();
     }
 
-    private void populateTiempoFields(DatabaseConnection.Tiempo tiempo) {
+    private void populateTiempoFields(DatabaseConnectionBackup2.Tiempo tiempo) {
         tiempoClaveTextField.setText(String.valueOf(tiempo.getClave()));
         tiempoMinutosTextField.setText(String.valueOf(tiempo.getMinutos()));
         tiempoPrecioTextField.setText(String.valueOf(tiempo.getPrecio()));
@@ -142,18 +141,18 @@ public class TiemposController  {
 
 
     private void loadTiemposData() {
-        List<DatabaseConnection.Tiempo> tiemposList = DatabaseConnection.getAllTiempos();
+        List<DatabaseConnectionBackup2.Tiempo> tiemposList = DatabaseConnectionBackup2.getAllTiempos();
         tiemposTable.setItems(FXCollections.observableArrayList(tiemposList));
         tiemposTable.refresh();
 
     }
-    private void editTiempo(DatabaseConnection.Tiempo tiempo) {
+    private void editTiempo(DatabaseConnectionBackup2.Tiempo tiempo) {
         populateTiempoFields(tiempo);
     }
 
-    private void deleteTiempo(DatabaseConnection.Tiempo tiempo) {
+    private void deleteTiempo(DatabaseConnectionBackup2.Tiempo tiempo) {
         if (confirmDeletion("tiempo")) {
-            DatabaseConnection.deleteTiempo(tiempo.getClave());
+            DatabaseConnectionBackup2.deleteTiempo(tiempo.getClave());
             tiemposTable.getItems().remove(tiempo);
         }
     }

@@ -13,33 +13,31 @@ import javafx.stage.Stage;
 import javafx.util.Callback;
 import javafx.util.StringConverter;
 
-import java.sql.Date;
-
 import java.io.IOException;
-
-
+import java.time.LocalDateTime;
 import javafx.scene.control.cell.PropertyValueFactory;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Consumer;
 
-public class RegistrarVentaController {
+public class RefactoredRegistrarVentaController {
 
     @FXML
     private TextField agregarNombreTextField;
     @FXML
-    private ComboBox<DatabaseConnectionBackup2.Tiempo> minutosComboBox;
+    private ComboBox<DatabaseManager.Tiempo> minutosComboBox;
     @FXML
-    private TableView<DatabaseConnectionBackup2.Producto> productosTableView;
+    private TableView<DatabaseManager.Producto> productosTableView;
     @FXML
-    private TableColumn<DatabaseConnectionBackup2.Producto, String> productoDescripcionColumn;
+    private TableColumn<DatabaseManager.Producto, String> productoDescripcionColumn;
     @FXML
-    private TableColumn<DatabaseConnectionBackup2.Producto, Double> productoPrecioColumn;
+    private TableColumn<DatabaseManager.Producto, Double> productoPrecioColumn;
     @FXML
-    private TableColumn<DatabaseConnectionBackup2.Producto, Double> productoExistenciaColumn;
+    private TableColumn<DatabaseManager.Producto, Double> productoExistenciaColumn;
     @FXML
-    private TableColumn<DatabaseConnectionBackup2.Producto, Void> productoAgregarColumn;
+    private TableColumn<DatabaseManager.Producto, Void> productoAgregarColumn;
     @FXML
     private TableView<OrdenItem> ordenTableView;
     @FXML
@@ -68,16 +66,16 @@ public class RegistrarVentaController {
     }
 
     private void initializeTiemposComboBox() {
-        List<DatabaseConnectionBackup2.Tiempo> tiemposList = DatabaseConnectionBackup2.getAllTiempos();
-        ObservableList<DatabaseConnectionBackup2.Tiempo> observableTiempos = FXCollections.observableArrayList(tiemposList);
+        List<DatabaseManager.Tiempo> tiemposList = DatabaseManager.TiempoDAO.getAll();
+        ObservableList<DatabaseManager.Tiempo> observableTiempos = FXCollections.observableArrayList(tiemposList);
         minutosComboBox.setItems(observableTiempos);
 
-        minutosComboBox.setCellFactory(new Callback<ListView<DatabaseConnectionBackup2.Tiempo>, ListCell<DatabaseConnectionBackup2.Tiempo>>() {
+        minutosComboBox.setCellFactory(new Callback<ListView<DatabaseManager.Tiempo>, ListCell<DatabaseManager.Tiempo>>() {
             @Override
-            public ListCell<DatabaseConnectionBackup2.Tiempo> call(ListView<DatabaseConnectionBackup2.Tiempo> param) {
-                return new ListCell<DatabaseConnectionBackup2.Tiempo>() {
+            public ListCell<DatabaseManager.Tiempo> call(ListView<DatabaseManager.Tiempo> param) {
+                return new ListCell<DatabaseManager.Tiempo>() {
                     @Override
-                    protected void updateItem(DatabaseConnectionBackup2.Tiempo item, boolean empty) {
+                    protected void updateItem(DatabaseManager.Tiempo item, boolean empty) {
                         super.updateItem(item, empty);
                         if (item == null || empty) {
                             setText(null);
@@ -89,9 +87,9 @@ public class RegistrarVentaController {
             }
         });
 
-        minutosComboBox.setConverter(new StringConverter<DatabaseConnectionBackup2.Tiempo>() {
+        minutosComboBox.setConverter(new StringConverter<DatabaseManager.Tiempo>() {
             @Override
-            public String toString(DatabaseConnectionBackup2.Tiempo tiempo) {
+            public String toString(DatabaseManager.Tiempo tiempo) {
                 if (tiempo == null) {
                     return null;
                 }
@@ -99,7 +97,7 @@ public class RegistrarVentaController {
             }
 
             @Override
-            public DatabaseConnectionBackup2.Tiempo fromString(String string) {
+            public DatabaseManager.Tiempo fromString(String string) {
                 return null;
             }
         });
@@ -111,7 +109,7 @@ public class RegistrarVentaController {
         productoPrecioColumn.setCellValueFactory(new PropertyValueFactory<>("precio"));
         productoAgregarColumn.setCellFactory(param -> createButtonCell("Agregar", this::agregarProducto));
 
-        List<DatabaseConnectionBackup2.Producto> productosList = DatabaseConnectionBackup2.getAllProductos();
+        List<DatabaseManager.Producto> productosList = DatabaseManager.ProductoDAO.getAll();
         productosTableView.setItems(FXCollections.observableArrayList(productosList));
     }
 
@@ -146,7 +144,7 @@ public class RegistrarVentaController {
 
     @FXML
     private void agregarTrampolin() {
-        DatabaseConnectionBackup2.Tiempo selectedTiempo = minutosComboBox.getValue();
+        DatabaseManager.Tiempo selectedTiempo = minutosComboBox.getValue();
         String nombre = agregarNombreTextField.getText().trim();
 
         if (selectedTiempo != null && !nombre.isEmpty()) {
@@ -161,7 +159,7 @@ public class RegistrarVentaController {
         }
     }
 
-    private void agregarProducto(DatabaseConnectionBackup2.Producto producto) {
+    private void agregarProducto(DatabaseManager.Producto producto) {
         OrdenItem existingItem = ordenItems.stream().filter(item -> item.getDescripcion().equals(producto.getDescripcion())).findFirst().orElse(null);
 
         if (existingItem != null) {
@@ -191,18 +189,17 @@ public class RegistrarVentaController {
 
     private void showAlert(String content) {
         Alert alert = new Alert(Alert.AlertType.WARNING);
-        alert.setContentText(content);
+        alert.setHeaderText(content);
         alert.showAndWait();
     }
 
-       private void showSuccessAlert(String content) {
+    private void showSuccessAlert(String content) {
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setContentText(content);
+        alert.setHeaderText(content);
         alert.showAndWait();
     }
 
-
-    // Inner class for order items
+ // Inner class for order items
     public static class OrdenItem {
         private int clave;
         private final String descripcion;
@@ -274,35 +271,42 @@ public class RegistrarVentaController {
         }
     }
 
-    @FXML
+  @FXML
+private void onProcesarVentaClick() {
+    if (ordenItems.isEmpty()) {
+        showAlert("No hay items en la orden para procesar.");
+        return;
+    }
 
-    private void onProcesarVentaClick() {
-        if (ordenItems.isEmpty()) {
-            showAlert("No hay items en la orden para procesar.");
-            return;
+    // Calculate total
+    double total = ordenItems.stream().mapToDouble(OrdenItem::getSubtotal).sum();
+
+    // Create venta object
+    DatabaseManager.Venta newVenta = new DatabaseManager.Venta(0, LocalDateTime.now(), total);
+
+    // Create partidas list
+    List<DatabaseManager.PartidaVenta> partidas = new ArrayList<>();
+
+    for (OrdenItem item : ordenItems) {
+        DatabaseManager.PartidaVenta partida;
+        if (item.getIsTrampolinTiempo()) {
+            partida = new DatabaseManager.PartidaVenta(
+                0, 0, 0, item.getCantidad(), item.getPrecio(),
+                item.getSubtotal(), item.getDescripcion(),  item.getClave(),true,
+                item.getNombreTrampolin(), item.getMinutosTrampolin()
+            );
+        } else {
+            partida = new DatabaseManager.PartidaVenta(
+                0, 0, item.getClave(), item.getCantidad(), item.getPrecio(),
+                item.getSubtotal(), item.getDescripcion(), 0,false, "", 0
+            );
         }
+        partidas.add(partida);
+    }
 
-        // Calculate total
-        double total = ordenItems.stream().mapToDouble(OrdenItem::getSubtotal).sum();
-
-        // Insert venta
-        Date fechaVenta = new java.sql.Date(System.currentTimeMillis());
-
-        DatabaseConnectionBackup2.insertVenta(fechaVenta, total);
-
-        // Get the clave_venta (assuming it's the last inserted ID)
-        int claveVenta = DatabaseConnectionBackup2.getLastInsertedId("ventas");
-
-        // Insert partidas_ventas
-        for (OrdenItem item : ordenItems) {
-
-            if (item.isTrampolinTiempo) {
-                DatabaseConnectionBackup2.insertTiempoPartidaVenta(claveVenta, item.getClave(), item.getMinutosTrampolin(), item.getNombreTrampolin(), item.getPrecio(), item.getDescripcion());
-            } else {
-                DatabaseConnectionBackup2.insertProductoPartidaVenta(claveVenta, item.getClave(), item.getCantidad(), item.getPrecio(), item.getSubtotal(), item.getDescripcion());
-            }
-
-        }
+    try {
+        // Insert venta with partidas
+        DatabaseManager.VentaDAO.insertVentaWithPartidas(newVenta, partidas);
 
         // Clear the order after processing
         ordenItems.clear();
@@ -310,9 +314,10 @@ public class RegistrarVentaController {
         updateTotal();
 
         showSuccessAlert("Venta procesada exitosamente.");
-
+    } catch (DatabaseManager.DatabaseException e) {
+        showAlert("Error al procesar la venta: " + e.getMessage());
     }
-
+}
 
     private void navigateTo(String fxmlFile, ActionEvent event) throws IOException {
         Parent root = FXMLLoader.load(Objects.requireNonNull(getClass().getResource(fxmlFile)));
@@ -324,9 +329,6 @@ public class RegistrarVentaController {
 
     @FXML
     protected void onRegresarVentasClick(ActionEvent event) throws IOException {
-        navigateTo("ConsultaVentas.fxml", event);
+        navigateTo("Temporizador.fxml", event);
     }
-
-
 }
-

@@ -10,8 +10,8 @@ import org.slf4j.LoggerFactory;
 import java.util.List;
 import java.util.function.Consumer;
 
-public class ProductosController {
-    private static final Logger logger = LoggerFactory.getLogger(ProductosController.class);
+public class RefactoredProductosController {
+    private static final Logger logger = LoggerFactory.getLogger(RefactoredProductosController.class);
 
     @FXML
     private TableColumn<DatabaseManager.Producto, Integer> productoClaveColumn;
@@ -52,7 +52,7 @@ public class ProductosController {
 
     private void showAlert(String content) {
         Alert alert = new Alert(Alert.AlertType.WARNING);
-        alert.setContentText(content);
+        alert.setHeaderText(content);
         alert.showAndWait();
     }
 

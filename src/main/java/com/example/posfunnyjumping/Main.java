@@ -13,10 +13,6 @@ public class Main extends Application {
     @Override
     public void start(Stage stage) throws IOException {
         try {
-            DatabaseConnectionBackup2.createTableProductos();
-            DatabaseConnectionBackup2.createTableTiempos();
-            DatabaseConnectionBackup2.createTableVentas();
-            DatabaseConnectionBackup2.createTablePartidasVentas();
 
             Parent root = FXMLLoader.load(Objects.requireNonNull(getClass().getResource("Temporizador.fxml")));
             Scene scene = new Scene(root);

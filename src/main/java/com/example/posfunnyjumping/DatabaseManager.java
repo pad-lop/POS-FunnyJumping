@@ -17,6 +17,19 @@ public class DatabaseManager {
     private static final String DB_URL = "jdbc:sqlite:funnyJumping.db";
     private static HikariDataSource dataSource;
 
+    private static final String CREATE_TABLE_CORTES = "CREATE TABLE IF NOT EXISTS cortes (" + "clave INTEGER PRIMARY KEY AUTOINCREMENT, " + "estado TEXT NOT NULL, " + "apertura TIMESTAMP NOT NULL, " + "cierre TIMESTAMP, " + "recibo_inicial INTEGER, " + "recibo_final INTEGER, " + "fondo_apertura REAL NOT NULL, " + "ventas REAL, " + "total_efectivo REAL, " + "total_tarjeta REAL, " + "retiros REAL, " + "total_caja REAL)";
+
+    private static final String CREATE_TABLE_TEMPORIZADOR = "CREATE TABLE IF NOT EXISTS temporizador (" + "clave INTEGER PRIMARY KEY AUTOINCREMENT, " + "clave_venta INTEGER, " + "nombre TEXT NOT NULL, " + "fecha TIMESTAMP NOT NULL, " + "minutos FLOAT NOT NULL, " + "activo BOOLEAN NOT NULL DEFAULT TRUE, " + "tiempo_restante TEXT, " + "FOREIGN KEY (clave_venta) REFERENCES ventas(clave_venta))";
+
+    private static final String CREATE_TABLE_PRODUCTOS = "CREATE TABLE IF NOT EXISTS productos (" + "clave INTEGER PRIMARY KEY AUTOINCREMENT, " + "descripcion TEXT NOT NULL, " + "precio REAL NOT NULL DEFAULT 0, " + "existencia REAL NOT NULL DEFAULT 0)";
+
+    private static final String CREATE_TABLE_TIEMPOS = "CREATE TABLE IF NOT EXISTS tiempos (" + "clave INTEGER PRIMARY KEY AUTOINCREMENT, " + "minutos REAL NOT NULL, " + "precio REAL NOT NULL DEFAULT 0)";
+
+    private static final String CREATE_TABLE_VENTAS = "CREATE TABLE IF NOT EXISTS ventas (" + "clave_venta INTEGER PRIMARY KEY AUTOINCREMENT, " + "fecha_venta TIMESTAMP NOT NULL, " + "total REAL NOT NULL DEFAULT 0, " + "pago REAL NOT NULL DEFAULT 0, " + "cambio REAL NOT NULL DEFAULT 0, " + "clave_corte INTEGER, " + "FOREIGN KEY (clave_corte) REFERENCES cortes(clave))";
+
+    private static final String CREATE_TABLE_PARTIDAS_VENTAS = "CREATE TABLE IF NOT EXISTS partidas_ventas (" + "clave_partida INTEGER PRIMARY KEY AUTOINCREMENT, " + "clave_venta INTEGER NOT NULL, " + "clave_producto INTEGER, " + "descripcion TEXT, " + "isTrampolinTiempo BOOLEAN NOT NULL DEFAULT FALSE, " + "clave_tiempo INTEGER, " + "nombre_trampolin TEXT, " + "minutos_trampolin INTEGER, " + "cantidad INT NOT NULL, " + "precio_unitario REAL NOT NULL, " + "subtotal REAL NOT NULL, " + "FOREIGN KEY (clave_venta) REFERENCES ventas(clave_venta), " + "FOREIGN KEY (clave_producto) REFERENCES productos(clave), " + "FOREIGN KEY (clave_tiempo) REFERENCES tiempos(clave))";
+
+
     static {
         try {
             initializeDataSource();
@@ -45,7 +58,9 @@ public class DatabaseManager {
     }
 
     private static void createTables() throws SQLException {
-        String[] createTableSQL = {"CREATE TABLE IF NOT EXISTS temporizador (clave INTEGER PRIMARY KEY AUTOINCREMENT, clave_venta INTEGER, nombre TEXT NOT NULL, fecha TIMESTAMP NOT NULL, minutos FLOAT NOT NULL, activo BOOLEAN NOT NULL DEFAULT TRUE, FOREIGN KEY (clave_venta) REFERENCES ventas(clave_venta))", "CREATE TABLE IF NOT EXISTS productos (clave integer PRIMARY KEY AUTOINCREMENT, descripcion text NOT NULL, precio real NOT NULL DEFAULT 0, existencia REAL NOT NULL DEFAULT 0)", "CREATE TABLE IF NOT EXISTS tiempos (clave integer PRIMARY KEY AUTOINCREMENT, minutos real NOT NULL, precio real NOT NULL DEFAULT 0)", "CREATE TABLE IF NOT EXISTS ventas (clave_venta INTEGER PRIMARY KEY AUTOINCREMENT, fecha_venta TIMESTAMP NOT NULL, total REAL NOT NULL DEFAULT 0, pago REAL NOT NULL DEFAULT 0, cambio REAL NOT NULL DEFAULT 0)", "CREATE TABLE IF NOT EXISTS partidas_ventas (clave_partida INTEGER PRIMARY KEY AUTOINCREMENT, clave_venta INTEGER NOT NULL, clave_producto INTEGER, descripcion TEXT, isTrampolinTiempo BOOL NOT NULL DEFAULT FALSE, clave_tiempo INTEGER, nombre_trampolin TEXT, minutos_trampolin INTEGER, cantidad INT NOT NULL, precio_unitario REAL NOT NULL, subtotal REAL NOT NULL, FOREIGN KEY (clave_venta) REFERENCES ventas(clave_venta), FOREIGN KEY (clave_producto) REFERENCES productos(clave), FOREIGN KEY (clave_tiempo) REFERENCES tiempos(clave))"};
+
+
+        String[] createTableSQL = {CREATE_TABLE_TEMPORIZADOR, CREATE_TABLE_PRODUCTOS, CREATE_TABLE_TIEMPOS, CREATE_TABLE_VENTAS, CREATE_TABLE_PARTIDAS_VENTAS, CREATE_TABLE_CORTES};
 
         try (Connection conn = getConnection(); Statement stmt = conn.createStatement()) {
             for (String sql : createTableSQL) {
@@ -173,6 +188,8 @@ public class DatabaseManager {
             List<Producto> productos = queryForList(SELECT_PRODUCTO_BY_ID, rs -> new Producto(rs.getInt("clave"), rs.getString("descripcion"), rs.getDouble("precio"), rs.getDouble("existencia")), clave);
             return productos.isEmpty() ? Optional.empty() : Optional.of(productos.get(0));
         }
+
+
     }
 
     // Tiempo related methods
@@ -250,12 +267,20 @@ public class DatabaseManager {
         private final int claveVenta;
         private final LocalDateTime fechaVenta;
         private final double total;
+        private final int idCorte; // New attribute
 
-        public Venta(int claveVenta, LocalDateTime fechaVenta, double total) {
+        public Venta(int claveVenta, LocalDateTime fechaVenta, double total, int idCorte) {
             this.claveVenta = claveVenta;
             this.fechaVenta = fechaVenta;
             this.total = total;
+            this.idCorte = idCorte;
         }
+
+        // Add a new getter for idCorte
+        public int getIdCorte() {
+            return idCorte;
+        }
+
 
         // Getters
         public int getClaveVenta() {
@@ -364,11 +389,14 @@ public class DatabaseManager {
         private static final String SELECT_ALL_VENTAS = "SELECT * FROM ventas";
         private static final String SELECT_PARTIDAS_BY_VENTA = "SELECT * FROM partidas_ventas WHERE clave_venta = ?";
 
+        private static final String SELECT_VENTAS_SIN_CORTE = "SELECT * FROM ventas WHERE clave_corte IS NULL";
+
+        private static final String UPDATE_VENTA_CORTE = "UPDATE ventas SET clave_corte = ? WHERE clave_venta = ?";
+
         public static void insertVentaWithPartidas(Venta venta, List<PartidaVenta> partidas) {
             try (Connection conn = getConnection()) {
                 conn.setAutoCommit(false);
-                try (PreparedStatement ventaStmt = conn.prepareStatement(INSERT_VENTA, Statement.RETURN_GENERATED_KEYS);
-                     PreparedStatement partidaStmt = conn.prepareStatement(INSERT_PARTIDA_VENTA)) {
+                try (PreparedStatement ventaStmt = conn.prepareStatement(INSERT_VENTA, Statement.RETURN_GENERATED_KEYS); PreparedStatement partidaStmt = conn.prepareStatement(INSERT_PARTIDA_VENTA)) {
 
                     // Insert venta
                     ventaStmt.setTimestamp(1, Timestamp.valueOf(venta.getFechaVenta()));
@@ -397,23 +425,14 @@ public class DatabaseManager {
                                 partidaStmt.addBatch();
 
                                 if (partida.isTrampolinTiempo()) {
-                                    TemporizadorDAO.Temporizador temporizador = new TemporizadorDAO.Temporizador(
-                                            partida.getClavePartida(),
-                                            ventaId,
-                                            partida.getNombreTrampolin(),
-                                            venta.getFechaVenta(),
-                                            partida.getMinutosTrampolin(),
-                                            true
-                                    );
+                                    TemporizadorDAO.Temporizador temporizador = new TemporizadorDAO.Temporizador(partida.getClavePartida(), ventaId, partida.getNombreTrampolin(), venta.getFechaVenta(), partida.getMinutosTrampolin(), true, "");
                                     temporizadores.add(temporizador);
                                 }
                             }
                             partidaStmt.executeBatch();
                             conn.commit();
 
-                            for (TemporizadorDAO.Temporizador temporizador : temporizadores) {
-                                System.out.println(temporizador.toString());
-                            }
+
                             // Now insert all temporizadores
                             for (TemporizadorDAO.Temporizador temporizador : temporizadores) {
                                 TemporizadorDAO.insert(temporizador);
@@ -436,19 +455,41 @@ public class DatabaseManager {
 
 
         public static List<Venta> getAllVentas() {
-            return queryForList(SELECT_ALL_VENTAS, rs -> new Venta(rs.getInt("clave_venta"), rs.getTimestamp("fecha_venta").toLocalDateTime(), rs.getDouble("total")));
+            return queryForList(SELECT_ALL_VENTAS, rs -> new Venta(rs.getInt("clave_venta"), rs.getTimestamp("fecha_venta").toLocalDateTime(), rs.getDouble("total"), rs.getInt("clave_corte")));
         }
 
         public static List<PartidaVenta> getPartidasByVenta(int claveVenta) {
             return queryForList(SELECT_PARTIDAS_BY_VENTA, rs -> new PartidaVenta(rs.getInt("clave_partida"), rs.getInt("clave_venta"), rs.getInt("clave_producto"), rs.getInt("cantidad"), rs.getDouble("precio_unitario"), rs.getDouble("subtotal"), rs.getString("descripcion"), rs.getInt("clave_tiempo"), rs.getBoolean("isTrampolinTiempo"), rs.getString("nombre_trampolin"), rs.getInt("minutos_trampolin")), claveVenta);
         }
+
+        public static List<Venta> getVentasSinCorte() {
+            return queryForList(SELECT_VENTAS_SIN_CORTE, rs -> new Venta(rs.getInt("clave_venta"), rs.getTimestamp("fecha_venta").toLocalDateTime(), rs.getDouble("total"), rs.getInt("clave_corte")));
+        }
+
+        public static double getTotalVentasSinCorte() {
+            List<Venta> ventas = getVentasSinCorte();
+            return ventas.stream().mapToDouble(Venta::getTotal).sum();
+        }
+
+        public static void asignarCorteAVentas(int claveCorte, List<Venta> ventas) {
+            try (Connection conn = getConnection(); PreparedStatement pstmt = conn.prepareStatement(UPDATE_VENTA_CORTE)) {
+                for (Venta venta : ventas) {
+                    pstmt.setInt(1, claveCorte);
+                    pstmt.setInt(2, venta.getClaveVenta());
+                    pstmt.addBatch();
+                }
+                pstmt.executeBatch();
+            } catch (SQLException e) {
+                logger.error("Error asignando corte a ventas", e);
+                throw new DatabaseException("Error asignando corte a ventas", e);
+            }
+        }
     }
 
 
     public class TemporizadorDAO {
-        private static final String INSERT_TEMPORIZADOR = "INSERT INTO temporizador (clave_venta, nombre, fecha, minutos, activo) VALUES (?, ?, ?, ?, ?)";
-        private static final String STOP_TEMPORIZADOR = "UPDATE temporizador SET activo = FALSE WHERE clave = ?";
-        private static final String DELETE_TEMPORIZADOR = "DELETE FROM temporizador WHERE clave = ?";
+        private static final String INSERT_TEMPORIZADOR = "INSERT INTO temporizador (clave_venta, nombre, fecha, minutos, activo, tiempo_restante) VALUES (?, ?, ?, ?, ?, ?)";
+        private static final String STOP_TEMPORIZADOR = "UPDATE temporizador SET activo = FALSE, tiempo_restante = ? WHERE clave = ?";
         private static final String SELECT_ALL_TEMPORIZADORES = "SELECT * FROM temporizador";
         private static final String SELECT_TEMPORIZADOR_BY_ID = "SELECT * FROM temporizador WHERE clave = ?";
 
@@ -459,6 +500,7 @@ public class DatabaseManager {
                 pstmt.setTimestamp(3, Timestamp.valueOf(temporizador.getFecha()));
                 pstmt.setFloat(4, temporizador.getMinutos());
                 pstmt.setBoolean(5, temporizador.isActivo());
+                pstmt.setString(6, temporizador.getTiempoRestante());
                 pstmt.executeUpdate();
             } catch (SQLException e) {
                 DatabaseManager.logger.error("Error inserting temporizador", e);
@@ -466,9 +508,10 @@ public class DatabaseManager {
             }
         }
 
-        public static void stop(int clave) {
+        public static void stop(int clave, String tiempoRestante) {
             try (Connection conn = DatabaseManager.getConnection(); PreparedStatement pstmt = conn.prepareStatement(STOP_TEMPORIZADOR)) {
-                pstmt.setInt(1, clave);
+                pstmt.setString(1, tiempoRestante);
+                pstmt.setInt(2, clave);
                 pstmt.executeUpdate();
             } catch (SQLException e) {
                 DatabaseManager.logger.error("Error updating temporizador", e);
@@ -476,24 +519,16 @@ public class DatabaseManager {
             }
         }
 
-        public static void delete(int clave) {
-            try (Connection conn = DatabaseManager.getConnection(); PreparedStatement pstmt = conn.prepareStatement(DELETE_TEMPORIZADOR)) {
-                pstmt.setInt(1, clave);
-                pstmt.executeUpdate();
-            } catch (SQLException e) {
-                DatabaseManager.logger.error("Error deleting temporizador", e);
-                throw new DatabaseManager.DatabaseException("Error deleting temporizador", e);
-            }
-        }
 
         public static List<Temporizador> getAll() {
-            return DatabaseManager.queryForList(SELECT_ALL_TEMPORIZADORES, rs -> new Temporizador(rs.getInt("clave"), rs.getInt("clave_venta"), rs.getString("nombre"), rs.getTimestamp("fecha").toLocalDateTime(), rs.getFloat("minutos"), rs.getBoolean("activo")));
+            return DatabaseManager.queryForList(SELECT_ALL_TEMPORIZADORES, rs -> new Temporizador(rs.getInt("clave"), rs.getInt("clave_venta"), rs.getString("nombre"), rs.getTimestamp("fecha").toLocalDateTime(), rs.getFloat("minutos"), rs.getBoolean("activo"), rs.getString("tiempo_restante")));
         }
 
         public Optional<Temporizador> getById(int clave) {
-            List<Temporizador> temporizadores = DatabaseManager.queryForList(SELECT_TEMPORIZADOR_BY_ID, rs -> new Temporizador(rs.getInt("clave"), rs.getInt("clave_venta"), rs.getString("nombre"), rs.getTimestamp("fecha").toLocalDateTime(), rs.getFloat("minutos"), rs.getBoolean("activo")), clave);
+            List<Temporizador> temporizadores = DatabaseManager.queryForList(SELECT_TEMPORIZADOR_BY_ID, rs -> new Temporizador(rs.getInt("clave"), rs.getInt("clave_venta"), rs.getString("nombre"), rs.getTimestamp("fecha").toLocalDateTime(), rs.getFloat("minutos"), rs.getBoolean("activo"), rs.getString("tiempo_restante")), clave);
             return temporizadores.isEmpty() ? Optional.empty() : Optional.of(temporizadores.get(0));
         }
+
 
         public static class Temporizador {
             private int clave;
@@ -503,13 +538,16 @@ public class DatabaseManager {
             private float minutos;
             private boolean activo;
 
-            public Temporizador(int clave, int claveVenta, String nombre, LocalDateTime fecha, float minutos, boolean activo) {
+            private String tiempoRestante; // New field
+
+            public Temporizador(int clave, int claveVenta, String nombre, LocalDateTime fecha, float minutos, boolean activo, String tiempoRestante) {
                 this.clave = clave;
                 this.claveVenta = claveVenta;
                 this.nombre = nombre;
                 this.fecha = fecha;
                 this.minutos = minutos;
                 this.activo = activo;
+                this.tiempoRestante = tiempoRestante;
             }
 
             // Getters
@@ -536,23 +574,254 @@ public class DatabaseManager {
             public boolean isActivo() {
                 return activo;
             }
-        }
-    }
 
-
-    // Utility methods
-    public static int getLastInsertedId(String tableName) {
-        String sql = "SELECT last_insert_rowid() AS last_id FROM " + tableName;
-        try (Connection conn = getConnection(); Statement stmt = conn.createStatement(); ResultSet rs = stmt.executeQuery(sql)) {
-            if (rs.next()) {
-                return rs.getInt("last_id");
+            public String getTiempoRestante() {
+                return tiempoRestante;
             }
-        } catch (SQLException e) {
-            logger.error("Error getting last inserted id", e);
-            throw new DatabaseException("Error getting last inserted id", e);
+
+            public void setTiempoRestante(String tiempoRestante) {
+                this.tiempoRestante = tiempoRestante;
+            }
+
         }
-        return -1;
+
     }
 
+
+    public static class Corte {
+        private int clave;
+        private String estado;
+        private LocalDateTime apertura;
+        private LocalDateTime cierre;
+        private int reciboInicial;
+        private int reciboFinal;
+        private double fondoApertura;
+        private double ventas;
+        private double totalEfectivo;
+        private double totalCaja;
+
+        public Corte(int clave, String estado, LocalDateTime apertura, LocalDateTime cierre, int reciboInicial, int reciboFinal, double fondoApertura, double ventas, double totalEfectivo, double totalCaja) {
+            this.clave = clave;
+            this.estado = estado;
+            this.apertura = apertura;
+            this.cierre = cierre;
+            this.reciboInicial = reciboInicial;
+            this.reciboFinal = reciboFinal;
+            this.fondoApertura = fondoApertura;
+            this.ventas = ventas;
+            this.totalEfectivo = totalEfectivo;
+            this.totalCaja = totalCaja;
+
+        }
+
+        // Getters and setters for all fields
+
+        public int getClave() {
+            return clave;
+        }
+
+        public void setClave(int clave) {
+            this.clave = clave;
+        }
+
+        public String getEstado() {
+            return estado;
+        }
+
+        public void setEstado(String estado) {
+            this.estado = estado;
+        }
+
+        public LocalDateTime getApertura() {
+            return apertura;
+        }
+
+        public void setApertura(LocalDateTime apertura) {
+            this.apertura = apertura;
+        }
+
+        public LocalDateTime getCierre() {
+            return cierre;
+        }
+
+        public void setCierre(LocalDateTime cierre) {
+            this.cierre = cierre;
+        }
+
+        public int getReciboInicial() {
+            return reciboInicial;
+        }
+
+        public void setReciboInicial(int reciboInicial) {
+            this.reciboInicial = reciboInicial;
+        }
+
+        public int getReciboFinal() {
+            return reciboFinal;
+        }
+
+        public void setReciboFinal(int reciboFinal) {
+            this.reciboFinal = reciboFinal;
+        }
+
+        public double getFondoApertura() {
+            return fondoApertura;
+        }
+
+        public void setFondoApertura(double fondoApertura) {
+            this.fondoApertura = fondoApertura;
+        }
+
+        public double getVentas() {
+            return ventas;
+        }
+
+        public void setVentas(double ventas) {
+            this.ventas = ventas;
+        }
+
+        public double getTotalEfectivo() {
+            return totalEfectivo;
+        }
+
+        public void setTotalEfectivo(double totalEfectivo) {
+            this.totalEfectivo = totalEfectivo;
+        }
+
+        public double getTotalCaja() {
+            return totalCaja;
+        }
+
+        public void setTotalCaja(double totalCaja) {
+            this.totalCaja = totalCaja;
+        }
+    }
+
+    public class CorteDAO {
+
+        private static final String SELECT_ALL_CORTES = "SELECT * FROM cortes ORDER BY apertura DESC";
+
+        private static final String INSERT_CORTE = "INSERT INTO cortes (estado, apertura, fondo_apertura) VALUES (?, ?, ?)";
+
+        private static final String UPDATE_CORTE = "UPDATE cortes SET estado = ?, cierre = ?, recibo_inicial = ?, recibo_final = ?, " + "ventas = ?, total_efectivo = ?, total_tarjeta = ?, retiros = ?, total_caja = ? " + "WHERE clave = ?";
+
+        private static final String SELECT_CORTE_BY_ID = "SELECT * FROM cortes WHERE clave = ?";
+
+        private static final String SELECT_LAST_OPEN_CORTE = "SELECT * FROM cortes WHERE estado = 'Opened' ORDER BY apertura DESC LIMIT 1";
+
+        static {
+            try (Connection conn = DatabaseManager.getConnection(); Statement stmt = conn.createStatement()) {
+                stmt.execute(CREATE_TABLE_CORTES);
+            } catch (SQLException e) {
+                DatabaseManager.logger.error("Error creating cortes table", e);
+                throw new DatabaseManager.DatabaseException("Error creating cortes table", e);
+            }
+        }
+
+        public static void insertCorte(Corte corte) {
+            try (Connection conn = DatabaseManager.getConnection(); PreparedStatement pstmt = conn.prepareStatement(INSERT_CORTE, Statement.RETURN_GENERATED_KEYS)) {
+                pstmt.setString(1, corte.getEstado());
+                pstmt.setTimestamp(2, Timestamp.valueOf(corte.getApertura()));
+                pstmt.setDouble(3, corte.getFondoApertura());
+                pstmt.executeUpdate();
+
+                try (ResultSet generatedKeys = pstmt.getGeneratedKeys()) {
+                    if (generatedKeys.next()) {
+                        corte.setClave(generatedKeys.getInt(1));
+                    }
+                }
+            } catch (SQLException e) {
+                DatabaseManager.logger.error("Error inserting corte", e);
+                throw new DatabaseManager.DatabaseException("Error inserting corte", e);
+            }
+        }
+
+        public static List<Corte> getAllCortes() {
+            List<Corte> cortes = new ArrayList<>();
+
+            try (Connection conn = DatabaseManager.getConnection(); PreparedStatement pstmt = conn.prepareStatement(SELECT_ALL_CORTES); ResultSet rs = pstmt.executeQuery()) {
+
+                while (rs.next()) {
+                    Corte corte = mapResultSetToCorte(rs);
+                    cortes.add(corte);
+                }
+            } catch (SQLException e) {
+                DatabaseManager.logger.error("Error retrieving all cortes", e);
+                throw new DatabaseManager.DatabaseException("Error retrieving all cortes", e);
+            }
+
+            return cortes;
+        }
+
+        public static int updateCorte(Corte corte) throws DatabaseManager.DatabaseException {
+            if (corte == null) {
+                throw new IllegalArgumentException("Corte cannot be null");
+            }
+
+            String UPDATE_CORTE = "UPDATE cortes SET estado = ?, cierre = ?, recibo_inicial = ?, recibo_final = ?, " +
+                    "ventas = ?, total_efectivo = ?, total_caja = ?, fondo_apertura = ? " +
+                    "WHERE clave = ?";
+
+            try (Connection conn = DatabaseManager.getConnection();
+                 PreparedStatement pstmt = conn.prepareStatement(UPDATE_CORTE)) {
+
+                pstmt.setString(1, corte.getEstado());
+                pstmt.setTimestamp(2, corte.getCierre() != null ? Timestamp.valueOf(corte.getCierre()) : null);
+                pstmt.setInt(3, corte.getReciboInicial());
+                pstmt.setInt(4, corte.getReciboFinal());
+                pstmt.setDouble(5, corte.getVentas());
+                pstmt.setDouble(6, corte.getTotalEfectivo());
+                pstmt.setDouble(7, corte.getTotalCaja());
+                pstmt.setDouble(8, corte.getFondoApertura());
+                pstmt.setInt(9, corte.getClave());
+
+                int affectedRows = pstmt.executeUpdate();
+
+                if (affectedRows == 0) {
+                    throw new DatabaseManager.DatabaseException("Updating corte failed, no rows affected.");
+                }
+
+                return affectedRows;
+            } catch (SQLException e) {
+                DatabaseManager.logger.error("Error updating corte", e);
+                throw new DatabaseManager.DatabaseException("Error updating corte: " + e.getMessage(), e);
+            }
+        }
+
+        public static Optional<Corte> getCorteById(int clave) {
+            try (Connection conn = DatabaseManager.getConnection(); PreparedStatement pstmt = conn.prepareStatement(SELECT_CORTE_BY_ID)) {
+                pstmt.setInt(1, clave);
+                try (ResultSet rs = pstmt.executeQuery()) {
+                    if (rs.next()) {
+                        return Optional.of(mapResultSetToCorte(rs));
+                    }
+                }
+            } catch (SQLException e) {
+                DatabaseManager.logger.error("Error getting corte by ID", e);
+                throw new DatabaseManager.DatabaseException("Error getting corte by ID", e);
+            }
+            return Optional.empty();
+        }
+
+        public static Optional<Corte> getLastOpenCorte() {
+            try (Connection conn = DatabaseManager.getConnection(); PreparedStatement pstmt = conn.prepareStatement(SELECT_LAST_OPEN_CORTE)) {
+                try (ResultSet rs = pstmt.executeQuery()) {
+                    if (rs.next()) {
+                        return Optional.of(mapResultSetToCorte(rs));
+                    }
+                }
+            } catch (SQLException e) {
+                DatabaseManager.logger.error("Error getting last open corte", e);
+                throw new DatabaseManager.DatabaseException("Error getting last open corte", e);
+            }
+            return Optional.empty();
+        }
+
+        private static Corte mapResultSetToCorte(ResultSet rs) throws SQLException {
+            return new Corte(rs.getInt("clave"), rs.getString("estado"), rs.getTimestamp("apertura").toLocalDateTime(), rs.getTimestamp("cierre") != null ? rs.getTimestamp("cierre").toLocalDateTime() : null, rs.getInt("recibo_inicial"), rs.getInt("recibo_final"), rs.getDouble("fondo_apertura"), rs.getDouble("ventas"), rs.getDouble("total_efectivo"), rs.getDouble("total_caja"));
+        }
+
+
+    }
 
 }

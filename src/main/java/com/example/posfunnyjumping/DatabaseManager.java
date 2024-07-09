@@ -267,18 +267,18 @@ public class DatabaseManager {
         private final int claveVenta;
         private final LocalDateTime fechaVenta;
         private final double total;
-        private final int idCorte; // New attribute
+        private final int clave_corte; // New attribute
 
-        public Venta(int claveVenta, LocalDateTime fechaVenta, double total, int idCorte) {
+        public Venta(int claveVenta, LocalDateTime fechaVenta, double total, int clave_corte) {
             this.claveVenta = claveVenta;
             this.fechaVenta = fechaVenta;
             this.total = total;
-            this.idCorte = idCorte;
+            this.clave_corte = clave_corte;
         }
 
-        // Add a new getter for idCorte
-        public int getIdCorte() {
-            return idCorte;
+        // Add a new getter for clave_corte
+        public int getClave_corte() {
+            return clave_corte;
         }
 
 
@@ -386,7 +386,8 @@ public class DatabaseManager {
     public static class VentaDAO {
         private static final String INSERT_VENTA = "INSERT INTO ventas(fecha_venta, total) VALUES(?,?)";
         private static final String INSERT_PARTIDA_VENTA = "INSERT INTO partidas_ventas(clave_venta, clave_producto, cantidad, precio_unitario, subtotal, descripcion, isTrampolinTiempo, nombre_trampolin, minutos_trampolin) VALUES(?,?,?,?,?,?,?,?,?)";
-        private static final String SELECT_ALL_VENTAS = "SELECT * FROM ventas";
+
+        private static final String SELECT_ALL_VENTAS = "SELECT * FROM ventas ORDER BY clave_venta DESC";
         private static final String SELECT_PARTIDAS_BY_VENTA = "SELECT * FROM partidas_ventas WHERE clave_venta = ?";
 
         private static final String SELECT_VENTAS_SIN_CORTE = "SELECT * FROM ventas WHERE clave_corte IS NULL";
@@ -472,6 +473,7 @@ public class DatabaseManager {
         }
 
         public static void asignarCorteAVentas(int claveCorte, List<Venta> ventas) {
+            System.out.println("Holi");
             try (Connection conn = getConnection(); PreparedStatement pstmt = conn.prepareStatement(UPDATE_VENTA_CORTE)) {
                 for (Venta venta : ventas) {
                     pstmt.setInt(1, claveCorte);
@@ -490,7 +492,7 @@ public class DatabaseManager {
     public class TemporizadorDAO {
         private static final String INSERT_TEMPORIZADOR = "INSERT INTO temporizador (clave_venta, nombre, fecha, minutos, activo, tiempo_restante) VALUES (?, ?, ?, ?, ?, ?)";
         private static final String STOP_TEMPORIZADOR = "UPDATE temporizador SET activo = FALSE, tiempo_restante = ? WHERE clave = ?";
-        private static final String SELECT_ALL_TEMPORIZADORES = "SELECT * FROM temporizador";
+        private static final String SELECT_ALL_TEMPORIZADORES = "SELECT * FROM temporizador ORDER BY clave DESC";
         private static final String SELECT_TEMPORIZADOR_BY_ID = "SELECT * FROM temporizador WHERE clave = ?";
 
         public static void insert(Temporizador temporizador) {
@@ -707,7 +709,7 @@ public class DatabaseManager {
 
         private static final String SELECT_CORTE_BY_ID = "SELECT * FROM cortes WHERE clave = ?";
 
-        private static final String SELECT_LAST_OPEN_CORTE = "SELECT * FROM cortes WHERE estado = 'Opened' ORDER BY apertura DESC LIMIT 1";
+        private static final String SELECT_LAST_OPEN_CORTE = "SELECT * FROM cortes WHERE estado = 'Abierto' ORDER BY apertura DESC LIMIT 1";
 
         static {
             try (Connection conn = DatabaseManager.getConnection(); Statement stmt = conn.createStatement()) {

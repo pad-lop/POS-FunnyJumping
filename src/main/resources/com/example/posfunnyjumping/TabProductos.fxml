@@ -1,30 +1,32 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.scene.control.*?>
-<?import javafx.scene.layout.*?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
 
-<AnchorPane xmlns="http://javafx.com/javafx"
-            xmlns:fx="http://javafx.com/fxml"
-            fx:controller="com.example.posfunnyjumping.ControllerProductos"
-            minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
+<AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="478.0" prefWidth="638.0" xmlns="http://javafx.com/javafx/22"
+            xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.example.posfunnyjumping.ControllerProductos">
     <HBox layoutX="37.0" layoutY="63.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0"
           AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
         <TableView fx:id="productosTable" prefHeight="200.0" prefWidth="200.0" HBox.hgrow="ALWAYS">
             <columns>
                 <TableColumn fx:id="productoClaveColumn" editable="false" prefWidth="75.0" sortable="false"
                              text="Clave"/>
-                <TableColumn fx:id="productoDescripcionColumn" editable="false" prefWidth="75.0"
-                             sortable="false" text="Descripcion"/>
+                <TableColumn fx:id="productoDescripcionColumn" editable="false" prefWidth="75.0" sortable="false"
+                             text="Descripcion"/>
                 <TableColumn fx:id="productoPrecioColumn" editable="false" prefWidth="75.0" sortable="false"
                              text="Precio"/>
-                <TableColumn fx:id="productoExistenciaColumn" editable="false" prefWidth="75.0"
-                             sortable="false" text="Existencia"/>
+                <TableColumn fx:id="productoExistenciaColumn" editable="false" prefWidth="75.0" sortable="false"
+                             text="Existencia"/>
                 <TableColumn prefWidth="75.0" text="Acciones">
                     <columns>
-                        <TableColumn fx:id="productoEditarColumn" editable="false" prefWidth="75.0"
-                                     sortable="false" text="Editar"/>
-                        <TableColumn fx:id="productoEliminarColumn" editable="false" prefWidth="75.0"
-                                     sortable="false" text="Eliminar"/>
+                        <TableColumn fx:id="productoEditarColumn" editable="false" prefWidth="75.0" sortable="false"
+                                     text="Editar"/>
+                        <TableColumn fx:id="productoEliminarColumn" editable="false" prefWidth="75.0" sortable="false"
+                                     text="Eliminar"/>
                     </columns>
                 </TableColumn>
             </columns>
@@ -33,13 +35,9 @@
             </columnResizePolicy>
         </TableView>
         <VBox alignment="CENTER" prefHeight="200.0" prefWidth="100.0">
-            <TextField fx:id="productoClaveTextField" editable="false" minWidth="200.0" promptText="Clave"/>
-            <TextField fx:id="productoDescripcionTextField" minWidth="200.0" promptText="Descripcion"/>
-            <TextField fx:id="productoPrecioTextField" promptText="Precio"/>
-            <TextField fx:id="productoExistenciaTextField" promptText="Existencia"/>
-            <Button maxWidth="-Infinity" minWidth="-Infinity" mnemonicParsing="false"
-                    onAction="#handleAddOrUpdateProduct" text="Agregar" VBox.vgrow="ALWAYS"/>
+            <Button maxWidth="-Infinity" minWidth="-Infinity" mnemonicParsing="false" text="Agregar" VBox.vgrow="ALWAYS"
+                    onAction="#onAddProducto"/>
+
         </VBox>
     </HBox>
 </AnchorPane>
-

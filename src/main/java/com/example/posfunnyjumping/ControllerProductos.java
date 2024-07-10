@@ -2,12 +2,15 @@ package com.example.posfunnyjumping;
 
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
+import javafx.geometry.Insets;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.layout.GridPane;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Consumer;
 
 public class ControllerProductos {
@@ -25,20 +28,23 @@ public class ControllerProductos {
     private TableColumn<DatabaseManager.Producto, Void> productoEditarColumn;
     @FXML
     private TableColumn<DatabaseManager.Producto, Void> productoEliminarColumn;
-    @FXML
-    private TextField productoClaveTextField;
-    @FXML
-    private TextField productoDescripcionTextField;
-    @FXML
-    private TextField productoPrecioTextField;
-    @FXML
-    private TextField productoExistenciaTextField;
+
     @FXML
     private TableView<DatabaseManager.Producto> productosTable;
 
     @FXML
     private void initialize() {
         initializeProductosTableColumns();
+    }
+
+    private void editProducto(DatabaseManager.Producto producto) {
+        showProductDialog(producto);
+    }
+
+    @FXML
+    private void onAddProducto() {
+        DatabaseManager.Producto newProducto = new DatabaseManager.Producto(0, "", 0.0, 0.0);
+        showProductDialog(newProducto);
     }
 
     private boolean confirmDeletion(String itemType) {
@@ -50,10 +56,117 @@ public class ControllerProductos {
         return alert.showAndWait().orElse(ButtonType.CANCEL) == ButtonType.OK;
     }
 
+    private void showProductDialog(DatabaseManager.Producto producto) {
+        Dialog<DatabaseManager.Producto> dialog = createProductDialog(producto);
+        Optional<DatabaseManager.Producto> result = dialog.showAndWait();
+        result.ifPresent(this::saveProduct);
+    }
+
     private void showAlert(String content) {
         Alert alert = new Alert(Alert.AlertType.WARNING);
         alert.setHeaderText(content);
         alert.showAndWait();
+    }
+
+    private GridPane createDialogGrid(DatabaseManager.Producto producto) {
+        GridPane grid = new GridPane();
+        grid.setHgap(10);
+        grid.setVgap(10);
+        grid.setPadding(new Insets(20, 150, 10, 10));
+
+        TextField claveField = new TextField(String.valueOf(producto.getClave()));
+        claveField.setEditable(false);
+        TextField descripcionField = new TextField(producto.getDescripcion());
+        descripcionField.setId("descripcionField");
+        TextField precioField = new TextField(String.valueOf(producto.getPrecio()));
+        precioField.setId("precioField");
+        TextField existenciaField = new TextField(String.valueOf(producto.getExistencia()));
+        existenciaField.setId("existenciaField");
+
+        grid.add(new Label("Clave:"), 0, 0);
+        grid.add(claveField, 1, 0);
+        grid.add(new Label("Descripción:"), 0, 1);
+        grid.add(descripcionField, 1, 1);
+        grid.add(new Label("Precio:"), 0, 2);
+        grid.add(precioField, 1, 2);
+        grid.add(new Label("Existencia:"), 0, 3);
+        grid.add(existenciaField, 1, 3);
+
+        // Add tooltips for accessibility
+        descripcionField.setTooltip(new Tooltip("Ingrese la descripción del producto"));
+        precioField.setTooltip(new Tooltip("Ingrese el precio del producto"));
+        existenciaField.setTooltip(new Tooltip("Ingrese la cantidad en existencia del producto"));
+
+        return grid;
+    }
+
+    private Dialog<DatabaseManager.Producto> createProductDialog(DatabaseManager.Producto producto) {
+        Dialog<DatabaseManager.Producto> dialog = new Dialog<>();
+        dialog.setTitle(producto.getClave() == 0 ? "Agregar Producto" : "Editar Producto");
+        dialog.setHeaderText("Ingrese los detalles del producto");
+
+        ButtonType saveButtonType = new ButtonType("Guardar", ButtonBar.ButtonData.OK_DONE);
+        dialog.getDialogPane().getButtonTypes().addAll(saveButtonType, ButtonType.CANCEL);
+
+        GridPane grid = createDialogGrid(producto);
+        dialog.getDialogPane().setContent(grid);
+
+        dialog.setResultConverter(dialogButton -> {
+            if (dialogButton == saveButtonType) {
+                try {
+                    return createProductFromInput(grid, producto.getClave());
+                } catch (IllegalArgumentException e) {
+                    showAlert(e.getMessage());
+                    return null;
+                }
+            }
+            return null;
+        });
+
+        return dialog;
+    }
+
+    private void saveProduct(DatabaseManager.Producto producto) {
+        try {
+            if (producto.getClave() == 0) {
+                DatabaseManager.ProductoDAO.insert(producto);
+            } else {
+                DatabaseManager.ProductoDAO.update(producto);
+            }
+            loadProductosData();
+        } catch (DatabaseManager.DatabaseException e) {
+            logger.error("Database error", e);
+            showAlert("Ocurrió un error al guardar el producto.");
+        }
+    }
+
+    private DatabaseManager.Producto createProductFromInput(GridPane grid, int clave) {
+        TextField descripcionField = (TextField) grid.lookup("#descripcionField");
+        TextField precioField = (TextField) grid.lookup("#precioField");
+        TextField existenciaField = (TextField) grid.lookup("#existenciaField");
+
+        String descripcion = descripcionField.getText();
+        if (descripcion.isEmpty()) {
+            throw new IllegalArgumentException("La descripción no puede estar vacía.");
+        }
+
+        double precio;
+        try {
+            precio = Double.parseDouble(precioField.getText());
+            if (precio < 0) throw new IllegalArgumentException();
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("El precio debe ser un número positivo.");
+        }
+
+        double existencia;
+        try {
+            existencia = Double.parseDouble(existenciaField.getText());
+            if (existencia < 0) throw new IllegalArgumentException();
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("La existencia debe ser un número positivo.");
+        }
+
+        return new DatabaseManager.Producto(clave, descripcion, precio, existencia);
     }
 
     private <T> TableCell<T, Void> createButtonCell(String buttonText, Consumer<T> action) {
@@ -75,63 +188,7 @@ public class ControllerProductos {
         };
     }
 
-    @FXML
-    private void handleAddOrUpdateProduct() {
-        if (!validateProductInputs()) {
-            showAlert("Please fill in all the fields.");
-            return;
-        }
-
-        try {
-            String descripcion = productoDescripcionTextField.getText();
-            double precio = Double.parseDouble(productoPrecioTextField.getText());
-            double existencia = Double.parseDouble(productoExistenciaTextField.getText());
-
-            DatabaseManager.Producto producto = new DatabaseManager.Producto(
-                productoClaveTextField.getText().isEmpty() ? 0 : Integer.parseInt(productoClaveTextField.getText()),
-                descripcion,
-                precio,
-                existencia
-            );
-
-            if (productoClaveTextField.getText().isEmpty()) {
-                DatabaseManager.ProductoDAO.insert(producto);
-            } else {
-                DatabaseManager.ProductoDAO.update(producto);
-            }
-
-            initializeProductosTableColumns();
-
-        } catch (NumberFormatException e) {
-            showAlert("Invalid number format in input fields.");
-        } catch (DatabaseManager.DatabaseException e) {
-            logger.error("Database error", e);
-            showAlert("An error occurred while saving the product.");
-        }
-    }
-
-    private boolean validateProductInputs() {
-        return !productoDescripcionTextField.getText().isEmpty()
-                && !productoPrecioTextField.getText().isEmpty()
-                && !productoExistenciaTextField.getText().isEmpty();
-    }
-
-    private void clearProductInputFields() {
-        productoClaveTextField.clear();
-        productoDescripcionTextField.clear();
-        productoPrecioTextField.clear();
-        productoExistenciaTextField.clear();
-    }
-
-    private void populateProductoFields(DatabaseManager.Producto producto) {
-        productoClaveTextField.setText(String.valueOf(producto.getClave()));
-        productoDescripcionTextField.setText(producto.getDescripcion());
-        productoPrecioTextField.setText(String.valueOf(producto.getPrecio()));
-        productoExistenciaTextField.setText(String.valueOf(producto.getExistencia()));
-    }
-
     private void initializeProductosTableColumns() {
-        clearProductInputFields();
         setProductosCellValueFactories();
         setProductosButtonColumns();
         loadProductosData();
@@ -158,10 +215,6 @@ public class ControllerProductos {
             logger.error("Error loading productos data", e);
             showAlert("An error occurred while loading the products.");
         }
-    }
-
-    private void editProducto(DatabaseManager.Producto producto) {
-        populateProductoFields(producto);
     }
 
     private void deleteProducto(DatabaseManager.Producto producto) {

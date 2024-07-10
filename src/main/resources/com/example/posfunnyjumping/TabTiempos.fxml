@@ -1,28 +1,23 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import java.lang.*?>
-<?import java.util.*?>
-<?import javafx.scene.*?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
 <AnchorPane xmlns="http://javafx.com/javafx"
             xmlns:fx="http://javafx.com/fxml"
             fx:controller="com.example.posfunnyjumping.ControllerTiempos"
-            minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
+            minHeight="0.0" minWidth="0.0" prefHeight="478.0" prefWidth="638.0">
     <HBox AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0"
           AnchorPane.topAnchor="0.0">
         <TableView fx:id="tiemposTable" prefHeight="200.0" prefWidth="200.0" HBox.hgrow="ALWAYS">
             <columns>
-                <TableColumn editable="false"  sortable="false" fx:id="tiempoClaveColumn" prefWidth="75.0" text="Clave"/>
-                <TableColumn editable="false"  sortable="false" fx:id="tiempoMinutosColumn" prefWidth="75.0" text="Minutos"/>
-                <TableColumn editable="false"  sortable="false" fx:id="tiempoPrecioColumn" prefWidth="75.0" text="Precio"/>
-                <TableColumn editable="false"  sortable="false" prefWidth="75.0" text="Acciones">
+                <TableColumn fx:id="tiempoClaveColumn" editable="false" prefWidth="75.0" sortable="false" text="Clave"/>
+                <TableColumn fx:id="tiempoMinutosColumn" editable="false" prefWidth="75.0" sortable="false" text="Minutos"/>
+                <TableColumn fx:id="tiempoPrecioColumn" editable="false" prefWidth="75.0" sortable="false" text="Precio"/>
+                <TableColumn prefWidth="75.0" text="Acciones">
                     <columns>
-                        <TableColumn fx:id="tiempoEditarColumn" editable="false" prefWidth="75.0"
-                                     sortable="false" text="Editar"/>
-                        <TableColumn fx:id="tiempoEliminarColumn" editable="false" prefWidth="75.0"
-                                     sortable="false" text="Eliminar"/>
+                        <TableColumn fx:id="tiempoEditarColumn" editable="false" prefWidth="75.0" sortable="false" text="Editar"/>
+                        <TableColumn fx:id="tiempoEliminarColumn" editable="false" prefWidth="75.0" sortable="false" text="Eliminar"/>
                     </columns>
                 </TableColumn>
             </columns>
@@ -31,12 +26,7 @@
             </columnResizePolicy>
         </TableView>
         <VBox alignment="CENTER" prefHeight="200.0" prefWidth="100.0">
-            <TextField fx:id="tiempoClaveTextField" editable="false" minWidth="200.0"
-                       promptText="Clave"/>
-            <TextField fx:id="tiempoMinutosTextField" minWidth="200.0" promptText="Minutos"/>
-            <TextField fx:id="tiempoPrecioTextField" promptText="Precio"/>
-            <Button maxWidth="-Infinity" minWidth="-Infinity" mnemonicParsing="false"
-                    onAction="#handleAddOrUpdateTiempo" text="Agregar" VBox.vgrow="ALWAYS"/>
+            <Button maxWidth="-Infinity" minWidth="-Infinity" mnemonicParsing="false" text="Agregar" VBox.vgrow="ALWAYS" onAction="#onAddTiempo"/>
         </VBox>
     </HBox>
 </AnchorPane>

@@ -17,6 +17,11 @@ public class DatabaseManager {
     private static final String DB_URL = "jdbc:sqlite:funnyJumping.db";
     private static HikariDataSource dataSource;
 
+
+    private static final String CREATE_TABLE_USUARIOS = "CREATE TABLE IF NOT EXISTS usuarios (" +
+    "clave INTEGER PRIMARY KEY AUTOINCREMENT, " +
+    "nombre TEXT NOT NULL, " +
+    "contraseña TEXT NOT NULL)";
     private static final String CREATE_TABLE_CORTES = "CREATE TABLE IF NOT EXISTS cortes (" +
             "clave INTEGER PRIMARY KEY AUTOINCREMENT, " +
             "estado TEXT NOT NULL, " +
@@ -81,7 +86,7 @@ public class DatabaseManager {
     private static void createTables() throws SQLException {
 
 
-        String[] createTableSQL = {CREATE_TABLE_TEMPORIZADOR, CREATE_TABLE_PRODUCTOS, CREATE_TABLE_TIEMPOS, CREATE_TABLE_VENTAS, CREATE_TABLE_PARTIDAS_VENTAS, CREATE_TABLE_CORTES};
+        String[] createTableSQL = {CREATE_TABLE_TEMPORIZADOR, CREATE_TABLE_PRODUCTOS, CREATE_TABLE_TIEMPOS, CREATE_TABLE_VENTAS, CREATE_TABLE_PARTIDAS_VENTAS, CREATE_TABLE_CORTES, CREATE_TABLE_USUARIOS};
 
         try (Connection conn = getConnection(); Statement stmt = conn.createStatement()) {
             for (String sql : createTableSQL) {
@@ -963,4 +968,79 @@ public class DatabaseManager {
 
     }
 
+
+    public static class Usuario {
+        private final int clave;
+        private final String nombre;
+        private final String contrasena;
+
+        public Usuario(int clave, String nombre, String contrasena) {
+            this.clave = clave;
+            this.nombre = nombre;
+            this.contrasena = contrasena;
+        }
+
+        // Getters
+        public int getClave() {
+            return clave;
+        }
+
+        public String getNombre() {
+            return nombre;
+        }
+
+        public String getContrasena() {
+            return contrasena;
+        }
+    }
+
+    public static class UsuarioDAO {
+        private static final String INSERT_USUARIO = "INSERT INTO usuarios(nombre, contrasena) VALUES(?,?)";
+        private static final String UPDATE_USUARIO = "UPDATE usuarios SET nombre = ?, contrasena = ? WHERE clave = ?";
+        private static final String DELETE_USUARIO = "DELETE FROM usuarios WHERE clave = ?";
+        private static final String SELECT_ALL_USUARIOS = "SELECT * FROM usuarios";
+        private static final String SELECT_USUARIO_BY_ID = "SELECT * FROM usuarios WHERE clave = ?";
+
+        public static void insert(Usuario usuario) {
+            try (Connection conn = getConnection(); PreparedStatement pstmt = conn.prepareStatement(INSERT_USUARIO)) {
+                pstmt.setString(1, usuario.getNombre());
+                pstmt.setString(2, usuario.getContrasena());
+                pstmt.executeUpdate();
+            } catch (SQLException e) {
+                logger.error("Error inserting usuario", e);
+                throw new DatabaseException("Error inserting usuario", e);
+            }
+        }
+
+        public static void update(Usuario usuario) {
+            try (Connection conn = getConnection(); PreparedStatement pstmt = conn.prepareStatement(UPDATE_USUARIO)) {
+                pstmt.setString(1, usuario.getNombre());
+                pstmt.setString(2, usuario.getContrasena());
+                pstmt.setInt(3, usuario.getClave());
+                pstmt.executeUpdate();
+            } catch (SQLException e) {
+                logger.error("Error updating usuario", e);
+                throw new DatabaseException("Error updating usuario", e);
+            }
+        }
+
+        public static void delete(int clave) {
+            try (Connection conn = getConnection(); PreparedStatement pstmt = conn.prepareStatement(DELETE_USUARIO)) {
+                pstmt.setInt(1, clave);
+                pstmt.executeUpdate();
+            } catch (SQLException e) {
+                logger.error("Error deleting usuario", e);
+                throw new DatabaseException("Error deleting usuario", e);
+            }
+        }
+
+        public static List<Usuario> getAll() {
+            return queryForList(SELECT_ALL_USUARIOS, rs -> new Usuario(rs.getInt("clave"), rs.getString("nombre"), rs.getString("contrasena")));
+        }
+
+        public static Optional<Usuario> getById(int clave) {
+            List<Usuario> usuarios = queryForList(SELECT_USUARIO_BY_ID, rs -> new Usuario(rs.getInt("clave"), rs.getString("nombre"), rs.getString("contraseña")), clave);
+            return usuarios.isEmpty() ? Optional.empty() : Optional.of(usuarios.get(0));
+        }
+    }
 }

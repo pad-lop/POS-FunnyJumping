@@ -5,21 +5,22 @@ import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
+import javafx.geometry.Insets;
 import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.scene.layout.GridPane;
 import javafx.stage.Stage;
 import javafx.util.Callback;
 import javafx.util.StringConverter;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
+
 import javafx.scene.control.cell.PropertyValueFactory;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.function.Consumer;
 
 public class ControllerRegistrarVenta {
@@ -199,7 +200,7 @@ public class ControllerRegistrarVenta {
         alert.showAndWait();
     }
 
- // Inner class for order items
+    // Inner class for order items
     public static class OrdenItem {
         private int clave;
         private final String descripcion;
@@ -271,53 +272,141 @@ public class ControllerRegistrarVenta {
         }
     }
 
-  @FXML
-private void onProcesarVentaClick() {
-    if (ordenItems.isEmpty()) {
-        showAlert("No hay items en la orden para procesar.");
-        return;
+    private Map<String, Object> showPaymentMethodDialog(double total) {
+        Dialog<Map<String, Object>> dialog = new Dialog<>();
+        dialog.setTitle("Método de Pago");
+        dialog.setHeaderText("Total a pagar: $" + String.format("%.2f", total));
+
+        // Set the button types
+        ButtonType confirmButtonType = new ButtonType("Confirmar", ButtonBar.ButtonData.OK_DONE);
+        dialog.getDialogPane().getButtonTypes().addAll(confirmButtonType, ButtonType.CANCEL);
+
+        // Create the payment method choice box
+        ChoiceBox<String> paymentMethodChoice = new ChoiceBox<>();
+        paymentMethodChoice.getItems().addAll("Efectivo", "Tarjeta");
+        paymentMethodChoice.setValue("Efectivo");
+
+        // Create the payment amount input field
+        TextField paymentAmountField = new TextField();
+        paymentAmountField.setPromptText("Monto pagado");
+
+        // Create the change display label
+        Label changeLabel = new Label("Cambio: $0.00");
+
+        // Add listeners to update the change
+        paymentAmountField.textProperty().addListener((observable, oldValue, newValue) -> {
+            try {
+                double paymentAmount = Double.parseDouble(newValue);
+                double change = paymentAmount - total;
+                changeLabel.setText("Cambio: $" + String.format("%.2f", Math.max(change, 0)));
+            } catch (NumberFormatException e) {
+                changeLabel.setText("Cambio: $0.00");
+            }
+        });
+
+        // Create and populate the grid pane
+        GridPane grid = new GridPane();
+        grid.setHgap(10);
+        grid.setVgap(10);
+        grid.setPadding(new Insets(20, 150, 10, 10));
+        grid.add(new Label("Método de pago:"), 0, 0);
+        grid.add(paymentMethodChoice, 1, 0);
+        grid.add(new Label("Monto pagado:"), 0, 1);
+        grid.add(paymentAmountField, 1, 1);
+        grid.add(changeLabel, 1, 2);
+
+        dialog.getDialogPane().setContent(grid);
+
+        // Enable/Disable confirm button depending on whether a payment method was selected and a valid amount was entered
+        Node confirmButton = dialog.getDialogPane().lookupButton(confirmButtonType);
+        confirmButton.setDisable(true);
+
+        paymentAmountField.textProperty().addListener((observable, oldValue, newValue) -> {
+            boolean isValid = false;
+            try {
+                double amount = Double.parseDouble(newValue);
+                isValid = amount >= total;
+            } catch (NumberFormatException e) {
+                isValid = false;
+            }
+            confirmButton.setDisable(!isValid);
+        });
+
+        // Convert the result to a map when the confirm button is clicked
+        dialog.setResultConverter(dialogButton -> {
+            if (dialogButton == confirmButtonType) {
+                Map<String, Object> result = new HashMap<>();
+                result.put("metodoPago", paymentMethodChoice.getValue());
+                result.put("montoPago", Double.parseDouble(paymentAmountField.getText()));
+                result.put("cambio", Double.parseDouble(changeLabel.getText().replace("Cambio: $", "")));
+                return result;
+            }
+            return null;
+        });
+
+        Optional<Map<String, Object>> result = dialog.showAndWait();
+        return result.orElse(null);
     }
 
-    // Calculate total
-    double total = ordenItems.stream().mapToDouble(OrdenItem::getSubtotal).sum();
-
-    // Create venta object
-    DatabaseManager.Venta newVenta = new DatabaseManager.Venta(0, LocalDateTime.now(), total, 0);
-
-    // Create partidas list
-    List<DatabaseManager.PartidaVenta> partidas = new ArrayList<>();
-
-    for (OrdenItem item : ordenItems) {
-        DatabaseManager.PartidaVenta partida;
-        if (item.getIsTrampolinTiempo()) {
-            partida = new DatabaseManager.PartidaVenta(
-                0, 0, 0, item.getCantidad(), item.getPrecio(),
-                item.getSubtotal(), item.getDescripcion(),  item.getClave(),true,
-                item.getNombreTrampolin(), item.getMinutosTrampolin()
-            );
-        } else {
-            partida = new DatabaseManager.PartidaVenta(
-                0, 0, item.getClave(), item.getCantidad(), item.getPrecio(),
-                item.getSubtotal(), item.getDescripcion(), 0,false, "", 0
-            );
+    @FXML
+    private void onProcesarVentaClick() {
+        if (ordenItems.isEmpty()) {
+            showAlert("No hay items en la orden para procesar.");
+            return;
         }
-        partidas.add(partida);
+
+        // Calculate total
+        double total = ordenItems.stream().mapToDouble(OrdenItem::getSubtotal).sum();
+
+        // Show payment method dialog
+        Map<String, Object> paymentInfo = showPaymentMethodDialog(total);
+        if (paymentInfo == null) {
+            // User cancelled the dialog
+            return;
+        }
+
+        // Create venta object
+        DatabaseManager.Venta newVenta = new DatabaseManager.Venta(0, LocalDateTime.now(), total, 0);
+        newVenta.setMetodoPago((String) paymentInfo.get("metodoPago"));
+        newVenta.setMontoPago((Double) paymentInfo.get("montoPago"));
+        newVenta.setCambio((Double) paymentInfo.get("cambio"));
+
+        // Create partidas list
+        List<DatabaseManager.PartidaVenta> partidas = new ArrayList<>();
+
+        for (OrdenItem item : ordenItems) {
+            DatabaseManager.PartidaVenta partida;
+            if (item.getIsTrampolinTiempo()) {
+                partida = new DatabaseManager.PartidaVenta(
+                        0, 0, 0, item.getCantidad(), item.getPrecio(),
+                        item.getSubtotal(), item.getDescripcion(), item.getClave(), true,
+                        item.getNombreTrampolin(), item.getMinutosTrampolin()
+                );
+            } else {
+                partida = new DatabaseManager.PartidaVenta(
+                        0, 0, item.getClave(), item.getCantidad(), item.getPrecio(),
+                        item.getSubtotal(), item.getDescripcion(), 0, false, "", 0
+                );
+            }
+            partidas.add(partida);
+        }
+
+        try {
+            // Insert venta with partidas
+            DatabaseManager.VentaDAO.insertVentaWithPartidas(newVenta, partidas);
+
+            // Clear the order after processing
+            ordenItems.clear();
+            ordenTableView.refresh();
+            updateTotal();
+
+            showSuccessAlert("Venta procesada exitosamente.\nMétodo de pago: " + newVenta.getMetodoPago() +
+                    "\nMonto pagado: $" + String.format("%.2f", newVenta.getMontoPago()) +
+                    "\nCambio: $" + String.format("%.2f", newVenta.getCambio()));
+        } catch (DatabaseManager.DatabaseException e) {
+            showAlert("Error al procesar la venta: " + e.getMessage());
+        }
     }
-
-    try {
-        // Insert venta with partidas
-        DatabaseManager.VentaDAO.insertVentaWithPartidas(newVenta, partidas);
-
-        // Clear the order after processing
-        ordenItems.clear();
-        ordenTableView.refresh();
-        updateTotal();
-
-        showSuccessAlert("Venta procesada exitosamente.");
-    } catch (DatabaseManager.DatabaseException e) {
-        showAlert("Error al procesar la venta: " + e.getMessage());
-    }
-}
 
     private void navigateTo(String fxmlFile, ActionEvent event) throws IOException {
         Parent root = FXMLLoader.load(Objects.requireNonNull(getClass().getResource(fxmlFile)));

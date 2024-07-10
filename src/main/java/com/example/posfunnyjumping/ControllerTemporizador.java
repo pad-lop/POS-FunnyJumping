@@ -140,48 +140,55 @@ public class ControllerTemporizador {
     }
 
     private void stopTemporizador(DatabaseManager.TemporizadorDAO.Temporizador temporizador) {
-    if (confirmDeletion("temporizador")) {
-        try {
-            String remainingTime = calculateRemainingTime(temporizador.getFecha(), temporizador.getMinutos());
-            DatabaseManager.TemporizadorDAO.stop(temporizador.getClave(), remainingTime);
-            initializeTemporizadoresTableColumns();
-        } catch (DatabaseManager.DatabaseException e) {
-            logger.error("Error stopping temporizador", e);
-            showAlert("An error occurred while stopping the temporizador.");
-        }
-    }
-}
-
-
-    private String calculateRemainingTime(LocalDateTime startTime, float totalMinutes) {
-        LocalDateTime now = LocalDateTime.now();
-        LocalDateTime endTime = startTime.plusMinutes((long) totalMinutes);
-
-        java.time.Duration remainingDuration = java.time.Duration.between(now, endTime);
-        long hours = remainingDuration.toHours();
-        long minutes = remainingDuration.toMinutesPart();
-        long seconds = remainingDuration.toSecondsPart();
-
-        return String.format("%02d:%02d:%02d", hours, minutes, seconds);
-    }
-private void setTemporizadorRestanteColumn() {
-    temporizadorRestanteColumn.setCellFactory(column -> new TableCell<>() {
-        @Override
-        protected void updateItem(Void item, boolean empty) {
-            super.updateItem(item, empty);
-            if (empty) {
-                setText(null);
-            } else {
-                DatabaseManager.TemporizadorDAO.Temporizador temporizador = getTableView().getItems().get(getIndex());
-                if (temporizador.isActivo()) {
-                    setText(calculateRemainingTime(temporizador.getFecha(), temporizador.getMinutos()));
-                } else {
-                    setText(temporizador.getTiempoRestante() != null ? temporizador.getTiempoRestante() : "Detenido");
-                }
+        if (confirmDeletion("temporizador")) {
+            try {
+                String remainingTime = calculateRemainingTime(temporizador.getFecha(), temporizador.getMinutos());
+                DatabaseManager.TemporizadorDAO.stop(temporizador.getClave(), remainingTime);
+                initializeTemporizadoresTableColumns();
+            } catch (DatabaseManager.DatabaseException e) {
+                logger.error("Error stopping temporizador", e);
+                showAlert("An error occurred while stopping the temporizador.");
             }
         }
-    });
+    }
+
+
+private String calculateRemainingTime(LocalDateTime startTime, float totalMinutes) {
+    LocalDateTime now = LocalDateTime.now();
+    LocalDateTime endTime = startTime.plusMinutes((long) totalMinutes + 1);
+
+    java.time.Duration remainingDuration = java.time.Duration.between(now, endTime);
+
+    boolean isNegative = remainingDuration.isNegative();
+    remainingDuration = remainingDuration.abs();
+
+    long hours = remainingDuration.toHours();
+    long minutes = remainingDuration.toMinutesPart();
+    long seconds = remainingDuration.toSecondsPart();
+
+    String sign = isNegative ? "- " : "";
+    return String.format("%s%02d:%02d:%02d", sign, hours, minutes, seconds);
 }
+
+    private void setTemporizadorRestanteColumn() {
+        temporizadorRestanteColumn.setCellFactory(column -> new TableCell<>() {
+            @Override
+            protected void updateItem(Void item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty) {
+                    setText(null);
+                } else {
+                    DatabaseManager.TemporizadorDAO.Temporizador temporizador = getTableView().getItems().get(getIndex());
+                    if (temporizador.isActivo()) {
+                        setText(calculateRemainingTime(temporizador.getFecha(), temporizador.getMinutos()));
+                    } else {
+                        setText(temporizador.getTiempoRestante() != null ? temporizador.getTiempoRestante() : "Detenido");
+                    }
+                }
+            }
+        });
+    }
+
     private void startPeriodicUpdate() {
         timeline = new Timeline(new KeyFrame(Duration.seconds(1), event -> {
             temporizadoresTable.refresh();

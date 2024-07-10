@@ -55,6 +55,20 @@
                                 <Insets top="5.0" />
                             </VBox.margin>
                         </VBox>
+                  <VBox>
+                     <children>
+                        <Label alignment="CENTER" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" text="Método de Pago" textAlignment="CENTER">
+                           <font>
+                              <Font name="System Bold" size="16.0" />
+                           </font>
+                        </Label>
+                        <TextField fx:id="ventaDetallesMetodoPagoTextField" alignment="CENTER" editable="false">
+                           <font>
+                              <Font size="14.0" />
+                           </font>
+                        </TextField>
+                     </children>
+                  </VBox>
                         <VBox>
                             <children>
                                 <Label alignment="CENTER" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" text="Corte" textAlignment="CENTER">

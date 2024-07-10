@@ -25,14 +25,13 @@
     <last-used-providers />
   </component>
   <component name="DBNavigator.Project.DatabaseFileManager">
-    <open-files>
-      <object connection-id="64ced874-d1fd-42ce-85a9-fe1978aaaf7b" object-ref="schemas/main/tables/cortes" />
-    </open-files>
+    <open-files />
   </component>
   <component name="DBNavigator.Project.DatabaseSessionManager">
     <connection id="64ced874-d1fd-42ce-85a9-fe1978aaaf7b" />
   </component>
   <component name="DBNavigator.Project.DatasetFilterManager">
+    <filter-actions connection-id="64ced874-d1fd-42ce-85a9-fe1978aaaf7b" dataset="main.partidas_ventas" active-filter-id="EMPTY_FILTER" />
     <filter-actions connection-id="64ced874-d1fd-42ce-85a9-fe1978aaaf7b" dataset="main.cortes" active-filter-id="EMPTY_FILTER" />
     <filter-actions connection-id="64ced874-d1fd-42ce-85a9-fe1978aaaf7b" dataset="main.ventas" active-filter-id="EMPTY_FILTER" />
     <filter-actions connection-id="64ced874-d1fd-42ce-85a9-fe1978aaaf7b" dataset="main.temporizador" active-filter-id="EMPTY_FILTER" />

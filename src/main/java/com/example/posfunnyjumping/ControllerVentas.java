@@ -26,7 +26,10 @@ public class ControllerVentas {
     @FXML
     private TableColumn<DatabaseManager.Venta, Double> ventaTotalColumn;
     @FXML
+    private TableColumn<DatabaseManager.Venta, String> ventaMetodoPagoColumn;
+    @FXML
     private TableColumn<DatabaseManager.Venta, Void> ventaDetallesColumn;
+
 
     @FXML
     private TableView<DatabaseManager.Venta> ventasTable;
@@ -53,6 +56,10 @@ public class ControllerVentas {
 
     @FXML
     private TextField ventaDetallesCorteTextField;
+
+
+    @FXML
+    private TextField ventaDetallesMetodoPagoTextField;
 
     @FXML
     private void initialize() {
@@ -89,6 +96,7 @@ public class ControllerVentas {
         ventaFolioColumn.setCellValueFactory(new PropertyValueFactory<>("claveVenta"));
         ventaFechaColumn.setCellValueFactory(new PropertyValueFactory<>("fechaVenta"));
         ventaTotalColumn.setCellValueFactory(new PropertyValueFactory<>("total"));
+        ventaMetodoPagoColumn.setCellValueFactory(new PropertyValueFactory<>("metodoPago"));
         ventaCorteColumn.setCellValueFactory(new PropertyValueFactory<>("clave_corte"));
     }
 
@@ -120,6 +128,7 @@ public class ControllerVentas {
         ventaDetallesFechaTextField.setText(venta.getFechaVenta().toString());
         ventaDetallesTotalTextField.setText(String.valueOf(venta.getTotal()));
         ventaDetallesCorteTextField.setText(String.valueOf(venta.getClave_corte()));
+        ventaDetallesMetodoPagoTextField.setText(String.valueOf(venta.getMetodoPago()));
 
         // Load the partidas for this venta
         List<DatabaseManager.PartidaVenta> partidas = DatabaseManager.VentaDAO.getPartidasByVenta(venta.getClaveVenta());

@@ -36,8 +36,15 @@ public class DatabaseManager {
 
     private static final String CREATE_TABLE_TIEMPOS = "CREATE TABLE IF NOT EXISTS tiempos (" + "clave INTEGER PRIMARY KEY AUTOINCREMENT, " + "minutos REAL NOT NULL, " + "precio REAL NOT NULL DEFAULT 0)";
 
-    private static final String CREATE_TABLE_VENTAS = "CREATE TABLE IF NOT EXISTS ventas (" + "clave_venta INTEGER PRIMARY KEY AUTOINCREMENT, " + "fecha_venta TIMESTAMP NOT NULL, " + "total REAL NOT NULL DEFAULT 0, " + "pago REAL NOT NULL DEFAULT 0, " + "cambio REAL NOT NULL DEFAULT 0, " + "clave_corte INTEGER, " + "FOREIGN KEY (clave_corte) REFERENCES cortes(clave))";
-
+    private static final String CREATE_TABLE_VENTAS = "CREATE TABLE IF NOT EXISTS ventas (" +
+            "clave_venta INTEGER PRIMARY KEY AUTOINCREMENT, " +
+            "fecha_venta TIMESTAMP NOT NULL, " +
+            "total REAL NOT NULL DEFAULT 0, " +
+            "cambio REAL NOT NULL DEFAULT 0, " +
+            "clave_corte INTEGER, " +
+            "metodo_pago TEXT, " +
+            "monto_pago REAL NOT NULL DEFAULT 0, " +
+            "FOREIGN KEY (clave_corte) REFERENCES cortes(clave))";
     private static final String CREATE_TABLE_PARTIDAS_VENTAS = "CREATE TABLE IF NOT EXISTS partidas_ventas (" + "clave_partida INTEGER PRIMARY KEY AUTOINCREMENT, " + "clave_venta INTEGER NOT NULL, " + "clave_producto INTEGER, " + "descripcion TEXT, " + "isTrampolinTiempo BOOLEAN NOT NULL DEFAULT FALSE, " + "clave_tiempo INTEGER, " + "nombre_trampolin TEXT, " + "minutos_trampolin INTEGER, " + "cantidad INT NOT NULL, " + "precio_unitario REAL NOT NULL, " + "subtotal REAL NOT NULL, " + "FOREIGN KEY (clave_venta) REFERENCES ventas(clave_venta), " + "FOREIGN KEY (clave_producto) REFERENCES productos(clave), " + "FOREIGN KEY (clave_tiempo) REFERENCES tiempos(clave))";
 
 
@@ -280,6 +287,10 @@ public class DatabaseManager {
         private final double total;
         private final int clave_corte; // New attribute
 
+        private String metodoPago;
+        private double montoPago;
+        private double cambio;
+
         public Venta(int claveVenta, LocalDateTime fechaVenta, double total, int clave_corte) {
             this.claveVenta = claveVenta;
             this.fechaVenta = fechaVenta;
@@ -304,6 +315,30 @@ public class DatabaseManager {
 
         public double getTotal() {
             return total;
+        }
+
+        public String getMetodoPago() {
+            return metodoPago;
+        }
+
+        public void setMetodoPago(String metodoPago) {
+            this.metodoPago = metodoPago;
+        }
+
+        public double getMontoPago() {
+            return montoPago;
+        }
+
+        public void setMontoPago(double montoPago) {
+            this.montoPago = montoPago;
+        }
+
+        public double getCambio() {
+            return cambio;
+        }
+
+        public void setCambio(double cambio) {
+            this.cambio = cambio;
         }
     }
 
@@ -392,11 +427,14 @@ public class DatabaseManager {
         public int getMinutosTrampolin() {
             return minutosTrampolin;
         }
+
+        public int getClaveTiempo(){return claveTiempo;}
+
     }
 
     public static class VentaDAO {
-        private static final String INSERT_VENTA = "INSERT INTO ventas(fecha_venta, total) VALUES(?,?)";
-        private static final String INSERT_PARTIDA_VENTA = "INSERT INTO partidas_ventas(clave_venta, clave_producto, cantidad, precio_unitario, subtotal, descripcion, isTrampolinTiempo, nombre_trampolin, minutos_trampolin) VALUES(?,?,?,?,?,?,?,?,?)";
+        private static final String INSERT_VENTA = "INSERT INTO ventas(fecha_venta, total, metodo_pago, monto_pago, cambio) VALUES(?,?,?,?,?)";
+        private static final String INSERT_PARTIDA_VENTA = "INSERT INTO partidas_ventas(clave_venta, clave_producto,clave_tiempo, cantidad, precio_unitario, subtotal, descripcion, isTrampolinTiempo, nombre_trampolin, minutos_trampolin) VALUES(?,?,?,?,?,?,?,?,?,?)";
 
         private static final String SELECT_ALL_VENTAS = "SELECT * FROM ventas ORDER BY clave_venta DESC";
         private static final String SELECT_PARTIDAS_BY_VENTA = "SELECT * FROM partidas_ventas WHERE clave_venta = ?";
@@ -409,11 +447,15 @@ public class DatabaseManager {
         public static void insertVentaWithPartidas(Venta venta, List<PartidaVenta> partidas) {
             try (Connection conn = getConnection()) {
                 conn.setAutoCommit(false);
-                try (PreparedStatement ventaStmt = conn.prepareStatement(INSERT_VENTA, Statement.RETURN_GENERATED_KEYS); PreparedStatement partidaStmt = conn.prepareStatement(INSERT_PARTIDA_VENTA)) {
+                try (PreparedStatement ventaStmt = conn.prepareStatement(INSERT_VENTA, Statement.RETURN_GENERATED_KEYS);
+                     PreparedStatement partidaStmt = conn.prepareStatement(INSERT_PARTIDA_VENTA)) {
 
                     // Insert venta
                     ventaStmt.setTimestamp(1, Timestamp.valueOf(venta.getFechaVenta()));
                     ventaStmt.setDouble(2, venta.getTotal());
+                    ventaStmt.setString(3, venta.getMetodoPago());
+                    ventaStmt.setDouble(4, venta.getMontoPago());
+                    ventaStmt.setDouble(5, venta.getCambio());
                     ventaStmt.executeUpdate();
 
                     // Get the generated venta ID
@@ -428,13 +470,14 @@ public class DatabaseManager {
                             for (PartidaVenta partida : partidas) {
                                 partidaStmt.setInt(1, ventaId);
                                 partidaStmt.setInt(2, partida.getClaveProducto());
-                                partidaStmt.setDouble(3, partida.getCantidad());
-                                partidaStmt.setDouble(4, partida.getPrecioUnitario());
-                                partidaStmt.setDouble(5, partida.getSubtotal());
-                                partidaStmt.setString(6, partida.getDescripcion());
-                                partidaStmt.setBoolean(7, partida.isTrampolinTiempo());
-                                partidaStmt.setString(8, partida.getNombreTrampolin());
-                                partidaStmt.setInt(9, partida.getMinutosTrampolin());
+                                partidaStmt.setInt(3, partida.getClaveTiempo());
+                                partidaStmt.setDouble(4, partida.getCantidad());
+                                partidaStmt.setDouble(5, partida.getPrecioUnitario());
+                                partidaStmt.setDouble(6, partida.getSubtotal());
+                                partidaStmt.setString(7, partida.getDescripcion());
+                                partidaStmt.setBoolean(8, partida.isTrampolinTiempo());
+                                partidaStmt.setString(9, partida.getNombreTrampolin());
+                                partidaStmt.setInt(10, partida.getMinutosTrampolin());
                                 partidaStmt.addBatch();
 
                                 if (partida.isTrampolinTiempo()) {
@@ -452,7 +495,6 @@ public class DatabaseManager {
                             }
                         }
                     }
-
                 } catch (SQLException e) {
                     conn.rollback();
                     logger.error("Error during transaction, rollback performed", e);
@@ -466,9 +508,19 @@ public class DatabaseManager {
             }
         }
 
-
         public static List<Venta> getAllVentas() {
-            return queryForList(SELECT_ALL_VENTAS, rs -> new Venta(rs.getInt("clave_venta"), rs.getTimestamp("fecha_venta").toLocalDateTime(), rs.getDouble("total"), rs.getInt("clave_corte")));
+            return queryForList(SELECT_ALL_VENTAS, rs -> {
+                Venta venta = new Venta(
+                        rs.getInt("clave_venta"),
+                        rs.getTimestamp("fecha_venta").toLocalDateTime(),
+                        rs.getDouble("total"),
+                        rs.getInt("clave_corte")
+                );
+                venta.setMetodoPago(rs.getString("metodo_pago"));
+                venta.setMontoPago(rs.getDouble("monto_pago"));
+                venta.setCambio(rs.getDouble("cambio"));
+                return venta;
+            });
         }
 
         public static List<PartidaVenta> getPartidasByVenta(int claveVenta) {

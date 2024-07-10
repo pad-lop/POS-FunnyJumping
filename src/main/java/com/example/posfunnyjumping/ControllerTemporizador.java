@@ -23,7 +23,6 @@ import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.util.Duration;
 
-
 public class ControllerTemporizador {
     private static final Logger logger = LoggerFactory.getLogger(ControllerTemporizador.class);
 
@@ -35,8 +34,6 @@ public class ControllerTemporizador {
     private TableColumn<DatabaseManager.TemporizadorDAO.Temporizador, LocalDateTime> temporizadorFechaColumn;
     @FXML
     private TableColumn<DatabaseManager.TemporizadorDAO.Temporizador, Float> temporizadorMinutosColumn;
-    @FXML
-    private TableColumn<DatabaseManager.TemporizadorDAO.Temporizador, Boolean> temporizadorActivoColumn;
     @FXML
     private TableColumn<DatabaseManager.TemporizadorDAO.Temporizador, Void> temporizadorDetenerColumn;
     @FXML
@@ -96,7 +93,6 @@ public class ControllerTemporizador {
         temporizadorNombreColumn.setCellValueFactory(new PropertyValueFactory<>("nombre"));
         temporizadorFechaColumn.setCellValueFactory(new PropertyValueFactory<>("fecha"));
         temporizadorMinutosColumn.setCellValueFactory(new PropertyValueFactory<>("minutos"));
-        temporizadorActivoColumn.setCellValueFactory(new PropertyValueFactory<>("activo"));
     }
 
     private void setTemporizadoresButtonColumns() {
@@ -153,22 +149,22 @@ public class ControllerTemporizador {
     }
 
 
-private String calculateRemainingTime(LocalDateTime startTime, float totalMinutes) {
-    LocalDateTime now = LocalDateTime.now();
-    LocalDateTime endTime = startTime.plusMinutes((long) totalMinutes + 1);
+    private String calculateRemainingTime(LocalDateTime startTime, float totalMinutes) {
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime endTime = startTime.plusMinutes((long) totalMinutes + 1);
 
-    java.time.Duration remainingDuration = java.time.Duration.between(now, endTime);
+        java.time.Duration remainingDuration = java.time.Duration.between(now, endTime);
 
-    boolean isNegative = remainingDuration.isNegative();
-    remainingDuration = remainingDuration.abs();
+        boolean isNegative = remainingDuration.isNegative();
+        remainingDuration = remainingDuration.abs();
 
-    long hours = remainingDuration.toHours();
-    long minutes = remainingDuration.toMinutesPart();
-    long seconds = remainingDuration.toSecondsPart();
+        long hours = remainingDuration.toHours();
+        long minutes = remainingDuration.toMinutesPart();
+        long seconds = remainingDuration.toSecondsPart();
 
-    String sign = isNegative ? "- " : "";
-    return String.format("%s%02d:%02d:%02d", sign, hours, minutes, seconds);
-}
+        String sign = isNegative ? "- " : "";
+        return String.format("%s%02d:%02d:%02d", sign, hours, minutes, seconds);
+    }
 
     private void setTemporizadorRestanteColumn() {
         temporizadorRestanteColumn.setCellFactory(column -> new TableCell<>() {
@@ -177,12 +173,22 @@ private String calculateRemainingTime(LocalDateTime startTime, float totalMinute
                 super.updateItem(item, empty);
                 if (empty) {
                     setText(null);
+                    setTextFill(javafx.scene.paint.Color.BLACK); // Reset color
                 } else {
                     DatabaseManager.TemporizadorDAO.Temporizador temporizador = getTableView().getItems().get(getIndex());
                     if (temporizador.isActivo()) {
-                        setText(calculateRemainingTime(temporizador.getFecha(), temporizador.getMinutos()));
+                        String remainingTime = calculateRemainingTime(temporizador.getFecha(), temporizador.getMinutos());
+                        setText(remainingTime);
+
+                        // Change color to red if the time is negative
+                        if (remainingTime.startsWith("-")) {
+                            setTextFill(javafx.scene.paint.Color.RED);
+                        } else {
+                            setTextFill(javafx.scene.paint.Color.BLACK);
+                        }
                     } else {
                         setText(temporizador.getTiempoRestante() != null ? temporizador.getTiempoRestante() : "Detenido");
+                        setTextFill(javafx.scene.paint.Color.BLACK);
                     }
                 }
             }

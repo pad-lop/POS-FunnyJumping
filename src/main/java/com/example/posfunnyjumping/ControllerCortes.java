@@ -41,13 +41,14 @@ public class ControllerCortes {
     private TableColumn<DatabaseManager.Corte, Double> corteVentasColumn;
     @FXML
     private TableColumn<DatabaseManager.Corte, Void> corteDetallesColumn;
-
     @FXML
     private TableColumn<DatabaseManager.Corte, Integer> corteReciboInicialColumn;
     @FXML
     private TableColumn<DatabaseManager.Corte, Integer> corteReciboFinalColumn;
     @FXML
     private TableColumn<DatabaseManager.Corte, Double> corteFondoAperturaColumn;
+    @FXML
+    private TableColumn<DatabaseManager.Corte, Double> corteDiferenciaColumn;
 
 
     @FXML
@@ -77,6 +78,7 @@ public class ControllerCortes {
         corteReciboInicialColumn.setCellValueFactory(new PropertyValueFactory<>("reciboInicial"));
         corteReciboFinalColumn.setCellValueFactory(new PropertyValueFactory<>("reciboFinal"));
         corteFondoAperturaColumn.setCellValueFactory(new PropertyValueFactory<>("fondoApertura"));
+        corteDiferenciaColumn.setCellValueFactory(new PropertyValueFactory<>("diferencia"));
     }
 
     private void setCorteButtonColumns() {
@@ -111,6 +113,7 @@ public class ControllerCortes {
     }
 
     private void detallesCorte(DatabaseManager.Corte corte) {
+        System.out.println(corte.getTotalTarjeta());
         Dialog<Void> dialog = new Dialog<>();
         dialog.setTitle("Detalles del Corte");
         dialog.setHeaderText("Corte #" + corte.getClave());
@@ -118,29 +121,38 @@ public class ControllerCortes {
         ButtonType closeButtonType = new ButtonType("Cerrar", ButtonBar.ButtonData.CANCEL_CLOSE);
         dialog.getDialogPane().getButtonTypes().addAll(closeButtonType);
 
-        VBox content = new VBox(10);
-        content.setPadding(new Insets(20, 150, 10, 10));
-
         GridPane grid = new GridPane();
         grid.setHgap(10);
         grid.setVgap(10);
+        grid.setPadding(new Insets(20, 150, 10, 10));
 
-        addDetailField(grid, 0, "Clave:", String.valueOf(corte.getClave()));
-        addDetailField(grid, 1, "Estado:", corte.getEstado());
-        addDetailField(grid, 2, "Apertura:", corte.getApertura().toString());
-        addDetailField(grid, 3, "Cierre:", corte.getCierre() != null ? corte.getCierre().toString() : "N/A");
-        addDetailField(grid, 4, "Recibo Inicial:", String.valueOf(corte.getReciboInicial()));
-        addDetailField(grid, 5, "Recibo Final:", String.valueOf(corte.getReciboFinal()));
-        addDetailField(grid, 6, "Fondo Apertura:", String.format("%.2f", corte.getFondoApertura()));
-        addDetailField(grid, 7, "Ventas:", String.format("%.2f", corte.getVentas()));
-        addDetailField(grid, 8, "Total Efectivo:", String.format("%.2f", corte.getTotalEfectivo()));
-        addDetailField(grid, 9, "Total Caja:", String.format("%.2f", corte.getTotalCaja()));
+        // Left column for corte details
+        VBox detailsBox = new VBox(10);
+        addDetailField(detailsBox, "Clave:", String.valueOf(corte.getClave()));
+        addDetailField(detailsBox, "Estado:", corte.getEstado());
+        detailsBox.getChildren().add(new Separator());
+        addDetailField(detailsBox, "Apertura:", corte.getApertura().toString());
+        addDetailField(detailsBox, "Cierre:", corte.getCierre() != null ? corte.getCierre().toString() : "N/A");
+        addDetailField(detailsBox, "Recibo Inicial:", String.valueOf(corte.getReciboInicial()));
+        addDetailField(detailsBox, "Recibo Final:", String.valueOf(corte.getReciboFinal()));
 
-        content.getChildren().add(grid);
+        detailsBox.getChildren().add(new Separator());
 
-        // Add sales table
+        addDetailField(detailsBox, "+ Total Efectivo:", String.format("%.2f", corte.getTotalEfectivo()));
+        addDetailField(detailsBox, "- Fondo Apertura:", String.format("%.2f", corte.getFondoApertura()));
+        addDetailField(detailsBox, "+ Pago con Tarjeta:", String.format("%.2f", corte.getTotalTarjeta()));
+
+        detailsBox.getChildren().add(new Separator());
+
+        addDetailField(detailsBox, "Total Caja:", String.format("%.2f", corte.getTotalCaja()));
+        addDetailField(detailsBox, "Ventas:", String.format("%.2f", corte.getVentas()));
+        addDetailField(detailsBox, "Diferencia:", String.format("%.2f", corte.getDiferencia()));
+
+        grid.add(detailsBox, 0, 0);
+
+        // Right column for sales table
         TableView<DatabaseManager.Venta> salesTable = new TableView<>();
-        salesTable.setMaxHeight(200);
+        salesTable.setMaxHeight(400);
 
         TableColumn<DatabaseManager.Venta, Integer> claveColumn = new TableColumn<>("Clave");
         claveColumn.setCellValueFactory(new PropertyValueFactory<>("claveVenta"));
@@ -148,28 +160,37 @@ public class ControllerCortes {
         TableColumn<DatabaseManager.Venta, LocalDateTime> fechaColumn = new TableColumn<>("Fecha");
         fechaColumn.setCellValueFactory(new PropertyValueFactory<>("fechaVenta"));
 
+        TableColumn<DatabaseManager.Venta, String> metodoPagoColumn = new TableColumn<>("Pago");
+        metodoPagoColumn.setCellValueFactory(new PropertyValueFactory<>("metodoPago"));
+
         TableColumn<DatabaseManager.Venta, Double> totalColumn = new TableColumn<>("Total");
         totalColumn.setCellValueFactory(new PropertyValueFactory<>("total"));
 
-        salesTable.getColumns().addAll(claveColumn, fechaColumn, totalColumn);
+
+        salesTable.getColumns().addAll(claveColumn, fechaColumn, metodoPagoColumn, totalColumn);
 
         // Get sales for this corte
         List<DatabaseManager.Venta> ventas = DatabaseManager.VentaDAO.getVentasByCorte(corte.getClave());
         salesTable.setItems(FXCollections.observableArrayList(ventas));
 
-        content.getChildren().addAll(new Label("Ventas del Corte:"), salesTable);
+        VBox salesBox = new VBox(10);
+        salesBox.getChildren().addAll(new Label("Ventas del Corte:"), salesTable);
 
-        dialog.getDialogPane().setContent(content);
+        grid.add(salesBox, 1, 0);
+
+        dialog.getDialogPane().setContent(grid);
         dialog.showAndWait();
     }
 
-    private void addDetailField(GridPane grid, int row, String label, String value) {
-        grid.add(new Label(label), 0, row);
+    private void addDetailField(VBox container, String label, String value) {
+        HBox hbox = new HBox(10);
+        Label labelNode = new Label(label);
+        labelNode.setMinWidth(120);
         TextField field = new TextField(value);
         field.setEditable(false);
-        grid.add(field, 1, row);
+        hbox.getChildren().addAll(labelNode, field);
+        container.getChildren().add(hbox);
     }
-
 
     private <T> TableCell<T, Void> createButtonCell(String buttonText, Consumer<T> action) {
         return new TableCell<>() {
@@ -240,7 +261,7 @@ public class ControllerCortes {
                 if (dialogButton == abrirButtonType) {
                     try {
                         double fondoApertura = Double.parseDouble(fondoAperturaField.getText());
-                        return new DatabaseManager.Corte(0, "Abierto", LocalDateTime.now(), null, 0, 0, fondoApertura, 0, 0, 0);
+                        return new DatabaseManager.Corte(0, "Abierto", LocalDateTime.now(), null, 0, 0, fondoApertura, 0, 0, 0, 0, 0);
                     } catch (NumberFormatException e) {
                         showErrorAlert("Datos inválidos. Por favor, ingrese números válidos.");
                         return null;
@@ -260,38 +281,6 @@ public class ControllerCortes {
         }
     }
 
-    // Add these helper methods to the class:
-    private void updateTotalCaja(TextField totalEfectivoField, TextField totalTarjetaField, TextField totalCajaField) {
-        try {
-            double efectivo = 0.0;
-
-            if (!totalEfectivoField.getText().isEmpty()) {
-                efectivo = Double.parseDouble(totalEfectivoField.getText());
-            }
-
-            double tarjeta = 0.0;
-
-            if (!totalTarjetaField.getText().isEmpty()) {
-                tarjeta = Double.parseDouble(totalTarjetaField.getText());
-            }
-
-            double totalCaja = efectivo + tarjeta;
-
-            totalCajaField.setText(String.format("%.2f", totalCaja));
-        } catch (NumberFormatException e) {
-            System.out.println("Error en el formato de número");
-            totalCajaField.setText("0.00");
-        }
-    }
-
-    private void updateTotalEsperado(TextField totalVentasField, TextField fondoAperturaField, TextField totalEsperadoField) {
-        try {
-
-        } catch (NumberFormatException e) {
-            totalEsperadoField.setText("0.00");
-        }
-    }
-
     @FXML
     protected void onCerrarCorteButtonClick(ActionEvent event) throws IOException {
         System.out.println("onCerrarCorteButtonClick method called");
@@ -300,6 +289,16 @@ public class ControllerCortes {
             List<DatabaseManager.Venta> ventasSinCorte = DatabaseManager.VentaDAO.getVentasSinCorte();
             double totalVentas = DatabaseManager.VentaDAO.getTotalVentasSinCorte();
 
+            if (ventasSinCorte.isEmpty() || totalVentas == 0) {
+                Platform.runLater(() -> {
+                    Alert alert = new Alert(Alert.AlertType.WARNING);
+                    alert.setTitle("No hay ventas");
+                    alert.setHeaderText("No se puede cerrar el corte");
+                    alert.setContentText("No se han registrado ventas desde la apertura del corte.");
+                    alert.showAndWait();
+                });
+                return; // Exit the method early, preventing corte closure
+            }
             Platform.runLater(() -> {
                 Dialog<DatabaseManager.Corte> dialog = new Dialog<>();
                 dialog.setTitle("Cerrar Corte");
@@ -333,10 +332,22 @@ public class ControllerCortes {
                 totalEsperadoField.setEditable(false);
 
 
-                // Add listeners for updating totalCajaField
-                totalEfectivoField.textProperty().addListener((observable, oldValue, newValue) -> updateTotalCaja(totalEfectivoField, totalTarjetaField, totalCajaField));
-                totalTarjetaField.textProperty().addListener((observable, oldValue, newValue) -> updateTotalCaja(totalEfectivoField, totalTarjetaField, totalCajaField));
+                TextField diferenciaField = new TextField();
+                diferenciaField.setEditable(false);
 
+
+                dialog.getDialogPane().setContent(grid);
+                grid.add(new Label("Diferencia:"), 3, 3);
+                grid.add(diferenciaField, 4, 3);
+
+
+                totalEfectivoField.textProperty().addListener((observable, oldValue, newValue) -> updateTotalCaja(totalEfectivoField, totalTarjetaField, totalCajaField, totalEsperadoField, diferenciaField, fondoAperturaField));
+
+                totalTarjetaField.textProperty().addListener((observable, oldValue, newValue) -> updateTotalCaja(totalEfectivoField, totalTarjetaField, totalCajaField, totalEsperadoField, diferenciaField, fondoAperturaField));
+
+                totalCajaField.textProperty().addListener((observable, oldValue, newValue) -> updateDiferencia(totalCajaField, totalEsperadoField, diferenciaField));
+
+                totalEsperadoField.textProperty().addListener((observable, oldValue, newValue) -> updateDiferencia(totalCajaField, totalEsperadoField, diferenciaField));
 
                 // Money counting grid
                 GridPane moneyGrid = new GridPane();
@@ -380,14 +391,17 @@ public class ControllerCortes {
                 }
 
                 grid.add(moneyGrid, 0, 0, 2, 1);
-                grid.add(new Label("Efectivo:"), 0, 1);
+                grid.add(new Label("+ Efectivo:"), 0, 1);
                 grid.add(totalEfectivoField, 1, 1);
 
-                grid.add(new Label("Tarjeta:"), 0, 2);
-                grid.add(totalTarjetaField, 1, 2);
+                grid.add(new Label("- Fondo Apertura:"), 0, 2);
+                grid.add(fondoAperturaField, 1, 2);
 
-                grid.add(new Label("Total:"), 0, 3);
-                grid.add(totalCajaField, 1, 3);
+                grid.add(new Label("+ Tarjeta:"), 0, 3);
+                grid.add(totalTarjetaField, 1, 3);
+
+                grid.add(new Label("Total:"), 0, 4);
+                grid.add(totalCajaField, 1, 4);
 
                 TableView<DatabaseManager.Venta> ventasTable = new TableView<>();
                 ventasTable.setItems(FXCollections.observableArrayList(ventasSinCorte));
@@ -409,14 +423,6 @@ public class ControllerCortes {
                 grid.add(new Label("Ventas:"), 3, 1);
                 grid.add(totalVentasField, 4, 1);
 
-
-                grid.add(new Label("Fondo Apertura:"), 3, 2);
-                grid.add(fondoAperturaField, 4, 2);
-
-                grid.add(new Label("Total:"), 3, 3);
-                grid.add(totalEsperadoField, 4, 3);
-
-
                 double ventas = 0.0;
 
                 if (!totalVentasField.getText().isEmpty()) {
@@ -429,11 +435,9 @@ public class ControllerCortes {
                     fondoApertura = Double.parseDouble(fondoAperturaField.getText());
                 }
 
-                double totalEsperado = ventas + fondoApertura;
+                double totalEsperado = ventas;
                 totalEsperadoField.setText(String.format("%.2f", totalEsperado));
 
-
-                dialog.getDialogPane().setContent(grid);
 
                 dialog.setResultConverter(dialogButton -> {
                     if (dialogButton == cerrarButtonType) {
@@ -442,13 +446,17 @@ public class ControllerCortes {
                             lastOpenCorte.setCierre(LocalDateTime.now());
 
                             lastOpenCorte.setTotalEfectivo(Double.parseDouble(totalEfectivoField.getText()));
-                            lastOpenCorte.setTotalTarjeta(Double.parseDouble(totalTarjetaField.getText()));
+                            lastOpenCorte.setTotalTarjeta(totalTarjetaField.getText().isEmpty() ? 0.0 : Double.parseDouble(totalTarjetaField.getText()));
                             lastOpenCorte.setTotalCaja(Double.parseDouble(totalCajaField.getText()));
 
-
                             lastOpenCorte.setVentas(totalVentas);
-                            lastOpenCorte.setTotalEsperado(Double.parseDouble(totalEsperadoField.getText()));
+                            lastOpenCorte.setDiferencia(Double.parseDouble(diferenciaField.getText()));
 
+                            // Establecer la primera y última venta
+                            if (!ventasSinCorte.isEmpty()) {
+                                lastOpenCorte.setReciboInicial(ventasSinCorte.get(0).getClaveVenta());
+                                lastOpenCorte.setReciboFinal(ventasSinCorte.get(ventasSinCorte.size() - 1).getClaveVenta());
+                            }
 
                             return lastOpenCorte;
                         } catch (NumberFormatException e) {
@@ -458,7 +466,6 @@ public class ControllerCortes {
                     }
                     return null;
                 });
-
                 Optional<DatabaseManager.Corte> result = dialog.showAndWait();
                 result.ifPresent(updatedCorte -> {
 
@@ -470,6 +477,23 @@ public class ControllerCortes {
         } else {
             showErrorAlert("No hay un corte abierto para cerrar");
         }
+    }
+
+    private void updateDiferencia(TextField totalCajaField, TextField totalEsperadoField, TextField diferenciaField) {
+        double totalCaja = totalCajaField.getText().isEmpty() ? 0 : Double.parseDouble(totalCajaField.getText());
+        double totalEsperado = totalEsperadoField.getText().isEmpty() ? 0 : Double.parseDouble(totalEsperadoField.getText());
+        double diferencia = totalCaja - totalEsperado;
+        diferenciaField.setText(String.format("%.2f", diferencia));
+    }
+
+    private void updateTotalCaja(TextField totalEfectivoField, TextField totalTarjetaField, TextField totalCajaField, TextField totalEsperadoField, TextField diferenciaField, TextField fondoAperturaField) {
+        double efectivo = totalEfectivoField.getText().isEmpty() ? 0 : Double.parseDouble(totalEfectivoField.getText());
+        double tarjeta = totalTarjetaField.getText().isEmpty() ? 0 : Double.parseDouble(totalTarjetaField.getText());
+        double fondoApertura = fondoAperturaField.getText().isEmpty() ? 0 : Double.parseDouble(fondoAperturaField.getText());
+        double total = efectivo + tarjeta - fondoApertura;
+        totalCajaField.setText(String.format("%.2f", total));
+        updateDiferencia(totalCajaField, totalEsperadoField, diferenciaField);
+
     }
 
     private void updateTotalEfectivo(TextField totalEfectivoField, TextField[] totalFields) {

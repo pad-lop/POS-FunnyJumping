@@ -62,6 +62,7 @@
                   </TableColumn>
                         <TableColumn fx:id="corteFondoAperturaColumn" editable="false" prefWidth="192.0" sortable="false" text="Fondo Apertura" />
                         <TableColumn fx:id="corteVentasColumn" editable="false" prefWidth="121.0" sortable="false" text="Ventas" />
+                  <TableColumn fx:id="corteDiferenciaColumn" editable="false" prefWidth="121.0" sortable="false" text="Diferencia" />
                         <TableColumn fx:id="corteDetallesColumn" editable="false" prefWidth="281.0" sortable="false" text="Acciones" />
                     </columns>
                     <columnResizePolicy>

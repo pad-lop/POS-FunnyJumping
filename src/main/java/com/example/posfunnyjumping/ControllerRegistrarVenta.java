@@ -53,7 +53,7 @@ public class ControllerRegistrarVenta {
     private TableColumn<OrdenItem, Void> ordenRemoverColumn;
     @FXML
     private TextField totalTextField;
-
+    @FXML
     private Stage stage;
     private Scene scene;
     private ObservableList<OrdenItem> ordenItems = FXCollections.observableArrayList();
@@ -65,6 +65,7 @@ public class ControllerRegistrarVenta {
         initializeOrdenTable();
         updateTotal();
     }
+
 
     private void initializeTiemposComboBox() {
         List<DatabaseManager.Tiempo> tiemposList = DatabaseManager.TiempoDAO.getAll();
@@ -272,6 +273,12 @@ public class ControllerRegistrarVenta {
         }
     }
 
+    private boolean isCorteOpen() {
+        Optional<DatabaseManager.Corte> lastOpenCorte = DatabaseManager.CorteDAO.getLastOpenCorte();
+        return lastOpenCorte.isPresent();
+    }
+
+
     private Map<String, Object> showPaymentMethodDialog(double total) {
         Dialog<Map<String, Object>> dialog = new Dialog<>();
         dialog.setTitle("Método de Pago");
@@ -348,8 +355,20 @@ public class ControllerRegistrarVenta {
         return result.orElse(null);
     }
 
+    private void showNoOpenCorteDialog() {
+        Alert alert = new Alert(Alert.AlertType.WARNING);
+        alert.setTitle("No hay corte abierto");
+        alert.setHeaderText("No se puede registrar la venta");
+        alert.setContentText("No hay un corte abierto. \nAbra un nuevo corte antes de registrar una venta.");
+        alert.showAndWait();
+    }
+
     @FXML
     private void onProcesarVentaClick() {
+        if (!isCorteOpen()) {
+            showNoOpenCorteDialog();
+            return;
+        }
         if (ordenItems.isEmpty()) {
             showAlert("No hay items en la orden para procesar.");
             return;

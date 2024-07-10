@@ -29,7 +29,10 @@ public class DatabaseManager {
             "total_efectivo REAL, " +
             "total_caja REAL, " +
             "total_tarjeta REAL, " +
-            "total_esperado REAL)";
+            "diferencia REAL " +
+
+
+            ")";
     private static final String CREATE_TABLE_TEMPORIZADOR = "CREATE TABLE IF NOT EXISTS temporizador (" + "clave INTEGER PRIMARY KEY AUTOINCREMENT, " + "clave_venta INTEGER, " + "nombre TEXT NOT NULL, " + "fecha TIMESTAMP NOT NULL, " + "minutos FLOAT NOT NULL, " + "activo BOOLEAN NOT NULL DEFAULT TRUE, " + "tiempo_restante TEXT, " + "FOREIGN KEY (clave_venta) REFERENCES ventas(clave_venta))";
 
     private static final String CREATE_TABLE_PRODUCTOS = "CREATE TABLE IF NOT EXISTS productos (" + "clave INTEGER PRIMARY KEY AUTOINCREMENT, " + "descripcion TEXT NOT NULL, " + "precio REAL NOT NULL DEFAULT 0, " + "existencia REAL NOT NULL DEFAULT 0)";
@@ -428,7 +431,9 @@ public class DatabaseManager {
             return minutosTrampolin;
         }
 
-        public int getClaveTiempo(){return claveTiempo;}
+        public int getClaveTiempo() {
+            return claveTiempo;
+        }
 
     }
 
@@ -567,6 +572,17 @@ public class DatabaseManager {
         private static final String STOP_TEMPORIZADOR = "UPDATE temporizador SET activo = FALSE, tiempo_restante = ? WHERE clave = ?";
         private static final String SELECT_ALL_TEMPORIZADORES = "SELECT * FROM temporizador ORDER BY clave DESC";
         private static final String SELECT_TEMPORIZADOR_BY_ID = "SELECT * FROM temporizador WHERE clave = ?";
+        private static final String DELETE_ALL_TEMPORIZADORES = "DELETE FROM temporizador";
+
+        public static void deleteAllTemporizadores() {
+            try (Connection conn = DatabaseManager.getConnection();
+                 PreparedStatement pstmt = conn.prepareStatement(DELETE_ALL_TEMPORIZADORES)) {
+                pstmt.executeUpdate();
+            } catch (SQLException e) {
+                DatabaseManager.logger.error("Error deleting all temporizadores", e);
+                throw new DatabaseManager.DatabaseException("Error deleting all temporizadores", e);
+            }
+        }
 
         public static void insert(Temporizador temporizador) {
             try (Connection conn = DatabaseManager.getConnection(); PreparedStatement pstmt = conn.prepareStatement(INSERT_TEMPORIZADOR)) {
@@ -670,20 +686,15 @@ public class DatabaseManager {
         private LocalDateTime cierre;
         private int reciboInicial;
         private int reciboFinal;
-
-
         private double ventas;
         private double fondoApertura;
-
-        private double totalEsperado;
-
-
         private double totalEfectivo;
         private double totalTarjeta;
         private double totalCaja;
+        private double diferencia;
 
 
-        public Corte(int clave, String estado, LocalDateTime apertura, LocalDateTime cierre, int reciboInicial, int reciboFinal, double fondoApertura, double ventas, double totalEfectivo, double totalCaja) {
+        public Corte(int clave, String estado, LocalDateTime apertura, LocalDateTime cierre, int reciboInicial, int reciboFinal, double fondoApertura, double ventas, double totalEfectivo, double totalTarjeta, double totalCaja, double diferencia) {
             this.clave = clave;
             this.estado = estado;
             this.apertura = apertura;
@@ -694,7 +705,8 @@ public class DatabaseManager {
             this.ventas = ventas;
             this.totalEfectivo = totalEfectivo;
             this.totalCaja = totalCaja;
-
+            this.diferencia = diferencia;
+            this.totalTarjeta = totalTarjeta;
         }
 
         // Getters and setters for all fields
@@ -779,13 +791,6 @@ public class DatabaseManager {
             this.totalCaja = totalCaja;
         }
 
-        public double getTotalEsperado() {
-            return totalEsperado;
-        }
-
-        public void setTotalEsperado(double totalApertura) {
-            this.totalEsperado = totalApertura;
-        }
 
         public double getTotalTarjeta() {
             return totalTarjeta;
@@ -794,6 +799,15 @@ public class DatabaseManager {
         public void setTotalTarjeta(double totalTarjeta) {
             this.totalTarjeta = totalTarjeta;
         }
+
+        public double getDiferencia() {
+            return diferencia;
+        }
+
+        public void setDiferencia(double diferencia) {
+            this.diferencia = diferencia;
+        }
+
     }
 
     public class CorteDAO {
@@ -812,7 +826,7 @@ public class DatabaseManager {
                 "total_caja = ?, " +
                 "total_tarjeta = ?, " +
                 "fondo_apertura = ?, " +
-                "total_esperado = ? " +
+                "diferencia = ? " +
                 "WHERE clave = ?";
         private static final String SELECT_CORTE_BY_ID = "SELECT * FROM cortes WHERE clave = ?";
 
@@ -879,13 +893,19 @@ public class DatabaseManager {
                 pstmt.setDouble(7, corte.getTotalCaja());
                 pstmt.setDouble(8, corte.getTotalTarjeta());
                 pstmt.setDouble(9, corte.getFondoApertura());
-                pstmt.setDouble(10, corte.getTotalEsperado());
+                pstmt.setDouble(10, corte.getDiferencia());
                 pstmt.setInt(11, corte.getClave());
+
 
                 int affectedRows = pstmt.executeUpdate();
 
                 if (affectedRows == 0) {
                     throw new DatabaseManager.DatabaseException("Updating corte failed, no rows affected.");
+                }
+
+                // Si el estado del corte es "Cerrado", elimina todos los temporizadores
+                if ("Cerrado".equals(corte.getEstado())) {
+                    TemporizadorDAO.deleteAllTemporizadores();
                 }
 
                 return affectedRows;
@@ -925,9 +945,21 @@ public class DatabaseManager {
         }
 
         private static Corte mapResultSetToCorte(ResultSet rs) throws SQLException {
-            return new Corte(rs.getInt("clave"), rs.getString("estado"), rs.getTimestamp("apertura").toLocalDateTime(), rs.getTimestamp("cierre") != null ? rs.getTimestamp("cierre").toLocalDateTime() : null, rs.getInt("recibo_inicial"), rs.getInt("recibo_final"), rs.getDouble("fondo_apertura"), rs.getDouble("ventas"), rs.getDouble("total_efectivo"), rs.getDouble("total_caja"));
+            return new Corte(
+                    rs.getInt("clave"),
+                    rs.getString("estado"),
+                    rs.getTimestamp("apertura").toLocalDateTime(),
+                    rs.getTimestamp("cierre") != null ? rs.getTimestamp("cierre").toLocalDateTime() : null,
+                    rs.getInt("recibo_inicial"),
+                    rs.getInt("recibo_final"),
+                    rs.getDouble("fondo_apertura"),
+                    rs.getDouble("ventas"),
+                    rs.getDouble("total_efectivo"),
+                    rs.getDouble("total_tarjeta"),
+                    rs.getDouble("total_caja"),
+                    rs.getDouble("diferencia")
+            );
         }
-
 
     }
 

@@ -86,7 +86,6 @@
                         <TableColumn fx:id="temporizadorFechaColumn" editable="false" prefWidth="123.5" sortable="false" text="Hora Inicio" />
                         <TableColumn fx:id="temporizadorMinutosColumn" editable="false" prefWidth="135.5" sortable="false" text="Tiempo Rentado" />
                         <TableColumn fx:id="temporizadorRestanteColumn" editable="false" prefWidth="133.5" sortable="false" text="Tiempo Restante" />
-                        <TableColumn fx:id="temporizadorActivoColumn" editable="false" prefWidth="90.0" sortable="false" text="Activo" />
                         <TableColumn fx:id="temporizadorDetenerColumn" editable="false" prefWidth="90.0" sortable="false" text="Eliminar" />
 
 

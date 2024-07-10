@@ -129,7 +129,7 @@
                                 <Insets bottom="5.0"/>
                             </VBox.margin>
                         </TableView>
-                        <Button maxWidth="1.7976931348623157E308" mnemonicParsing="false"
+                        <Button fx:id="procesarVentaButton" maxWidth="1.7976931348623157E308" mnemonicParsing="false"
                                 onAction="#onProcesarVentaClick" prefHeight="30.0" text="Procesar">
                             <VBox.margin>
                                 <Insets top="5.0"/>

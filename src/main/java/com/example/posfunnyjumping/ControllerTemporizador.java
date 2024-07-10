@@ -18,6 +18,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
@@ -42,11 +43,30 @@ public class ControllerTemporizador {
     private TableView<DatabaseManager.TemporizadorDAO.Temporizador> temporizadoresTable;
 
     private Timeline timeline;
+    private List<DatabaseManager.TemporizadorDAO.Temporizador> originalTemporizadoresList;
+
+    @FXML
+    private TextField BuscarTextField;
+    @FXML
+    private Button clearSearchButton;
+
+    @FXML
+    private void onClearSearchButtonClick() {
+        BuscarTextField.clear();
+    }
 
     @FXML
     private void initialize() {
         initializeTemporizadoresTableColumns();
         startPeriodicUpdate();
+
+        BuscarTextField.textProperty().addListener((observable, oldValue, newValue) -> {
+            filterData(newValue);
+            clearSearchButton.setDisable(newValue.isEmpty());
+        });
+
+        // Initially disable the clear button
+        clearSearchButton.setDisable(true);
     }
 
     private boolean confirmDeletion(String itemType) {
@@ -126,13 +146,27 @@ public class ControllerTemporizador {
 
     private void loadTemporizadoresData() {
         try {
-            List<DatabaseManager.TemporizadorDAO.Temporizador> temporizadoresList = DatabaseManager.TemporizadorDAO.getAll();
-            temporizadoresTable.setItems(FXCollections.observableArrayList(temporizadoresList));
+            originalTemporizadoresList = DatabaseManager.TemporizadorDAO.getAll();
+            temporizadoresTable.setItems(FXCollections.observableArrayList(originalTemporizadoresList));
             temporizadoresTable.refresh();
         } catch (DatabaseManager.DatabaseException e) {
             logger.error("Error loading temporizadores data", e);
             showAlert("An error occurred while loading the temporizadores.");
         }
+    }
+
+    private void filterData(String searchText) {
+        if (searchText == null || searchText.isEmpty()) {
+            temporizadoresTable.setItems(FXCollections.observableArrayList(originalTemporizadoresList));
+        } else {
+            List<DatabaseManager.TemporizadorDAO.Temporizador> filteredList = originalTemporizadoresList.stream()
+                    .filter(temporizador ->
+                            temporizador.getNombre().toLowerCase().contains(searchText.toLowerCase())
+                    )
+                    .collect(Collectors.toList());
+            temporizadoresTable.setItems(FXCollections.observableArrayList(filteredList));
+        }
+        temporizadoresTable.refresh();
     }
 
     private void stopTemporizador(DatabaseManager.TemporizadorDAO.Temporizador temporizador) {

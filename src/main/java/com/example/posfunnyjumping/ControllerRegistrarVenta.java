@@ -22,6 +22,7 @@ import javafx.scene.control.cell.PropertyValueFactory;
 
 import java.util.*;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 public class ControllerRegistrarVenta {
 
@@ -53,10 +54,14 @@ public class ControllerRegistrarVenta {
     private TableColumn<OrdenItem, Void> ordenRemoverColumn;
     @FXML
     private TextField totalTextField;
+
+    @FXML
+    private TextField buscarProductoTextField;
     @FXML
     private Stage stage;
     private Scene scene;
     private ObservableList<OrdenItem> ordenItems = FXCollections.observableArrayList();
+    private List<DatabaseManager.Producto> originalProductosList;
 
     @FXML
     private void initialize() {
@@ -64,8 +69,11 @@ public class ControllerRegistrarVenta {
         initializeProductosTable();
         initializeOrdenTable();
         updateTotal();
-    }
 
+        buscarProductoTextField.textProperty().addListener((observable, oldValue, newValue) -> {
+            filterProductos(newValue);
+        });
+    }
 
     private void initializeTiemposComboBox() {
         List<DatabaseManager.Tiempo> tiemposList = DatabaseManager.TiempoDAO.getAll();
@@ -111,8 +119,23 @@ public class ControllerRegistrarVenta {
         productoPrecioColumn.setCellValueFactory(new PropertyValueFactory<>("precio"));
         productoAgregarColumn.setCellFactory(param -> createButtonCell("Agregar", this::agregarProducto));
 
-        List<DatabaseManager.Producto> productosList = DatabaseManager.ProductoDAO.getAll();
-        productosTableView.setItems(FXCollections.observableArrayList(productosList));
+        originalProductosList = DatabaseManager.ProductoDAO.getAll();
+        productosTableView.setItems(FXCollections.observableArrayList(originalProductosList));
+    }
+
+    private void filterProductos(String searchText) {
+        if (searchText == null || searchText.isEmpty()) {
+            productosTableView.setItems(FXCollections.observableArrayList(originalProductosList));
+        } else {
+            List<DatabaseManager.Producto> filteredList = originalProductosList.stream()
+                    .filter(producto ->
+                            producto.getDescripcion().toLowerCase().contains(searchText.toLowerCase()) ||
+                                    String.valueOf(producto.getPrecio()).contains(searchText) ||
+                                    String.valueOf(producto.getExistencia()).contains(searchText)
+                    )
+                    .collect(Collectors.toList());
+            productosTableView.setItems(FXCollections.observableArrayList(filteredList));
+        }
     }
 
     private void initializeOrdenTable() {
@@ -172,6 +195,12 @@ public class ControllerRegistrarVenta {
             ordenItems.add(newItem);
         }
         updateTotal();
+    }
+
+
+    @FXML
+    private void clearProductSearch() {
+        buscarProductoTextField.clear();
     }
 
     private void removerOrdenItem(OrdenItem item) {

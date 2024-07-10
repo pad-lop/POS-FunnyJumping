@@ -53,7 +53,12 @@
                                         <Font name="System Bold" size="14.0"/>
                                     </font>
                                 </Label>
-                                <TextField promptText="Buscar"/>
+                                <HBox spacing="5.0">
+                                    <TextField fx:id="buscarProductoTextField" promptText="Buscar" HBox.hgrow="ALWAYS"/>
+                                    <Button fx:id="clearProductSearchButton" mnemonicParsing="false"
+                                            onAction="#clearProductSearch" text="Vaciars"/>
+                                </HBox>
+
                                 <TableView fx:id="productosTableView" prefHeight="200.0" prefWidth="200.0"
                                            VBox.vgrow="ALWAYS">
                                     <columns>

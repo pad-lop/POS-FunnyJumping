@@ -113,7 +113,6 @@ public class ControllerCortes {
     }
 
     private void detallesCorte(DatabaseManager.Corte corte) {
-        System.out.println(corte.getTotalTarjeta());
         Dialog<Void> dialog = new Dialog<>();
         dialog.setTitle("Detalles del Corte");
         dialog.setHeaderText("Corte #" + corte.getClave());
@@ -160,14 +159,10 @@ public class ControllerCortes {
         TableColumn<DatabaseManager.Venta, LocalDateTime> fechaColumn = new TableColumn<>("Fecha");
         fechaColumn.setCellValueFactory(new PropertyValueFactory<>("fechaVenta"));
 
-        TableColumn<DatabaseManager.Venta, String> metodoPagoColumn = new TableColumn<>("Pago");
-        metodoPagoColumn.setCellValueFactory(new PropertyValueFactory<>("metodoPago"));
-
         TableColumn<DatabaseManager.Venta, Double> totalColumn = new TableColumn<>("Total");
         totalColumn.setCellValueFactory(new PropertyValueFactory<>("total"));
 
-
-        salesTable.getColumns().addAll(claveColumn, fechaColumn, metodoPagoColumn, totalColumn);
+        salesTable.getColumns().addAll(claveColumn, fechaColumn, totalColumn);
 
         // Get sales for this corte
         List<DatabaseManager.Venta> ventas = DatabaseManager.VentaDAO.getVentasByCorte(corte.getClave());

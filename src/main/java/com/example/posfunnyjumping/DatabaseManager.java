@@ -17,8 +17,19 @@ public class DatabaseManager {
     private static final String DB_URL = "jdbc:sqlite:funnyJumping.db";
     private static HikariDataSource dataSource;
 
-    private static final String CREATE_TABLE_CORTES = "CREATE TABLE IF NOT EXISTS cortes (" + "clave INTEGER PRIMARY KEY AUTOINCREMENT, " + "estado TEXT NOT NULL, " + "apertura TIMESTAMP NOT NULL, " + "cierre TIMESTAMP, " + "recibo_inicial INTEGER, " + "recibo_final INTEGER, " + "fondo_apertura REAL NOT NULL, " + "ventas REAL, " + "total_efectivo REAL, " + "total_tarjeta REAL, " + "retiros REAL, " + "total_caja REAL)";
-
+    private static final String CREATE_TABLE_CORTES = "CREATE TABLE IF NOT EXISTS cortes (" +
+            "clave INTEGER PRIMARY KEY AUTOINCREMENT, " +
+            "estado TEXT NOT NULL, " +
+            "apertura TIMESTAMP NOT NULL, " +
+            "cierre TIMESTAMP, " +
+            "recibo_inicial INTEGER, " +
+            "recibo_final INTEGER, " +
+            "fondo_apertura REAL NOT NULL, " +
+            "ventas REAL, " +
+            "total_efectivo REAL, " +
+            "total_caja REAL, " +
+            "total_tarjeta REAL, " +
+            "total_esperado REAL)";
     private static final String CREATE_TABLE_TEMPORIZADOR = "CREATE TABLE IF NOT EXISTS temporizador (" + "clave INTEGER PRIMARY KEY AUTOINCREMENT, " + "clave_venta INTEGER, " + "nombre TEXT NOT NULL, " + "fecha TIMESTAMP NOT NULL, " + "minutos FLOAT NOT NULL, " + "activo BOOLEAN NOT NULL DEFAULT TRUE, " + "tiempo_restante TEXT, " + "FOREIGN KEY (clave_venta) REFERENCES ventas(clave_venta))";
 
     private static final String CREATE_TABLE_PRODUCTOS = "CREATE TABLE IF NOT EXISTS productos (" + "clave INTEGER PRIMARY KEY AUTOINCREMENT, " + "descripcion TEXT NOT NULL, " + "precio REAL NOT NULL DEFAULT 0, " + "existencia REAL NOT NULL DEFAULT 0)";
@@ -393,6 +404,7 @@ public class DatabaseManager {
         private static final String SELECT_VENTAS_SIN_CORTE = "SELECT * FROM ventas WHERE clave_corte IS NULL";
 
         private static final String UPDATE_VENTA_CORTE = "UPDATE ventas SET clave_corte = ? WHERE clave_venta = ?";
+        private static final String SELECT_VENTAS_BY_CORTE = "SELECT * FROM ventas WHERE clave_corte = ?";
 
         public static void insertVentaWithPartidas(Venta venta, List<PartidaVenta> partidas) {
             try (Connection conn = getConnection()) {
@@ -470,6 +482,15 @@ public class DatabaseManager {
         public static double getTotalVentasSinCorte() {
             List<Venta> ventas = getVentasSinCorte();
             return ventas.stream().mapToDouble(Venta::getTotal).sum();
+        }
+
+        public static List<Venta> getVentasByCorte(int claveCorte) {
+            return queryForList(SELECT_VENTAS_BY_CORTE, rs -> new Venta(
+                    rs.getInt("clave_venta"),
+                    rs.getTimestamp("fecha_venta").toLocalDateTime(),
+                    rs.getDouble("total"),
+                    rs.getInt("clave_corte")
+            ), claveCorte);
         }
 
         public static void asignarCorteAVentas(int claveCorte, List<Venta> ventas) {
@@ -597,10 +618,18 @@ public class DatabaseManager {
         private LocalDateTime cierre;
         private int reciboInicial;
         private int reciboFinal;
-        private double fondoApertura;
+
+
         private double ventas;
+        private double fondoApertura;
+
+        private double totalEsperado;
+
+
         private double totalEfectivo;
+        private double totalTarjeta;
         private double totalCaja;
+
 
         public Corte(int clave, String estado, LocalDateTime apertura, LocalDateTime cierre, int reciboInicial, int reciboFinal, double fondoApertura, double ventas, double totalEfectivo, double totalCaja) {
             this.clave = clave;
@@ -697,6 +726,22 @@ public class DatabaseManager {
         public void setTotalCaja(double totalCaja) {
             this.totalCaja = totalCaja;
         }
+
+        public double getTotalEsperado() {
+            return totalEsperado;
+        }
+
+        public void setTotalEsperado(double totalApertura) {
+            this.totalEsperado = totalApertura;
+        }
+
+        public double getTotalTarjeta() {
+            return totalTarjeta;
+        }
+
+        public void setTotalTarjeta(double totalTarjeta) {
+            this.totalTarjeta = totalTarjeta;
+        }
     }
 
     public class CorteDAO {
@@ -705,8 +750,18 @@ public class DatabaseManager {
 
         private static final String INSERT_CORTE = "INSERT INTO cortes (estado, apertura, fondo_apertura) VALUES (?, ?, ?)";
 
-        private static final String UPDATE_CORTE = "UPDATE cortes SET estado = ?, cierre = ?, recibo_inicial = ?, recibo_final = ?, " + "ventas = ?, total_efectivo = ?, total_tarjeta = ?, retiros = ?, total_caja = ? " + "WHERE clave = ?";
-
+        private static final String UPDATE_CORTE = "UPDATE cortes SET " +
+                "estado = ?, " +
+                "cierre = ?, " +
+                "recibo_inicial = ?, " +
+                "recibo_final = ?, " +
+                "ventas = ?, " +
+                "total_efectivo = ?, " +
+                "total_caja = ?, " +
+                "total_tarjeta = ?, " +
+                "fondo_apertura = ?, " +
+                "total_esperado = ? " +
+                "WHERE clave = ?";
         private static final String SELECT_CORTE_BY_ID = "SELECT * FROM cortes WHERE clave = ?";
 
         private static final String SELECT_LAST_OPEN_CORTE = "SELECT * FROM cortes WHERE estado = 'Abierto' ORDER BY apertura DESC LIMIT 1";
@@ -760,10 +815,6 @@ public class DatabaseManager {
                 throw new IllegalArgumentException("Corte cannot be null");
             }
 
-            String UPDATE_CORTE = "UPDATE cortes SET estado = ?, cierre = ?, recibo_inicial = ?, recibo_final = ?, " +
-                    "ventas = ?, total_efectivo = ?, total_caja = ?, fondo_apertura = ? " +
-                    "WHERE clave = ?";
-
             try (Connection conn = DatabaseManager.getConnection();
                  PreparedStatement pstmt = conn.prepareStatement(UPDATE_CORTE)) {
 
@@ -774,8 +825,10 @@ public class DatabaseManager {
                 pstmt.setDouble(5, corte.getVentas());
                 pstmt.setDouble(6, corte.getTotalEfectivo());
                 pstmt.setDouble(7, corte.getTotalCaja());
-                pstmt.setDouble(8, corte.getFondoApertura());
-                pstmt.setInt(9, corte.getClave());
+                pstmt.setDouble(8, corte.getTotalTarjeta());
+                pstmt.setDouble(9, corte.getFondoApertura());
+                pstmt.setDouble(10, corte.getTotalEsperado());
+                pstmt.setInt(11, corte.getClave());
 
                 int affectedRows = pstmt.executeUpdate();
 

@@ -21,7 +21,7 @@ public class DatabaseManager {
     private static final String CREATE_TABLE_USUARIOS = "CREATE TABLE IF NOT EXISTS usuarios (" +
     "clave INTEGER PRIMARY KEY AUTOINCREMENT, " +
     "nombre TEXT NOT NULL, " +
-    "contraseña TEXT NOT NULL)";
+    "contrasena TEXT NOT NULL)";
     private static final String CREATE_TABLE_CORTES = "CREATE TABLE IF NOT EXISTS cortes (" +
             "clave INTEGER PRIMARY KEY AUTOINCREMENT, " +
             "estado TEXT NOT NULL, " +

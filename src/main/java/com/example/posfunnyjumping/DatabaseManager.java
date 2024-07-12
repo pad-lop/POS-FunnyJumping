@@ -35,8 +35,6 @@ public class DatabaseManager {
             "total_caja REAL, " +
             "total_tarjeta REAL, " +
             "diferencia REAL " +
-
-
             ")";
     private static final String CREATE_TABLE_TEMPORIZADOR = "CREATE TABLE IF NOT EXISTS temporizador (" + "clave INTEGER PRIMARY KEY AUTOINCREMENT, " + "clave_venta INTEGER, " + "nombre TEXT NOT NULL, " + "fecha TIMESTAMP NOT NULL, " + "minutos FLOAT NOT NULL, " + "activo BOOLEAN NOT NULL DEFAULT TRUE, " + "tiempo_restante TEXT, " + "FOREIGN KEY (clave_venta) REFERENCES ventas(clave_venta))";
 
@@ -1039,7 +1037,7 @@ public class DatabaseManager {
         }
 
         public static Optional<Usuario> getById(int clave) {
-            List<Usuario> usuarios = queryForList(SELECT_USUARIO_BY_ID, rs -> new Usuario(rs.getInt("clave"), rs.getString("nombre"), rs.getString("contraseña")), clave);
+            List<Usuario> usuarios = queryForList(SELECT_USUARIO_BY_ID, rs -> new Usuario(rs.getInt("clave"), rs.getString("nombre"), rs.getString("contrasena")), clave);
             return usuarios.isEmpty() ? Optional.empty() : Optional.of(usuarios.get(0));
         }
     }

@@ -115,6 +115,8 @@ public class ControllerVentas {
         }
     }
 
+
+
     private void setVentasCellValueFactories() {
         ventaFolioColumn.setCellValueFactory(new PropertyValueFactory<>("claveVenta"));
 

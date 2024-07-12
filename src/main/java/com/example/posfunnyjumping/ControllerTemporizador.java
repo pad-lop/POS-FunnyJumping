@@ -165,11 +165,35 @@ public class ControllerTemporizador {
         });
     }
 
+    private void adjustColumnWidths() {
+        temporizadoresTable.setColumnResizePolicy(TableView.UNCONSTRAINED_RESIZE_POLICY);
+
+        for (TableColumn<DatabaseManager.TemporizadorDAO.Temporizador, ?> column : temporizadoresTable.getColumns()) {
+            // Set a minimum width for each column
+            column.setMinWidth(100);
+
+            // Fit the width to the content
+            column.setPrefWidth(column.getWidth());
+        }
+
+        // Adjust the table width to fit all columns
+        double totalWidth = temporizadoresTable.getColumns().stream()
+                .mapToDouble(TableColumn::getWidth)
+                .sum();
+        temporizadoresTable.setPrefWidth(totalWidth);
+
+        // Auto-resize the columns to fit their content
+        temporizadoresTable.autosize();
+    }
+
     private void loadTemporizadoresData() {
         try {
             originalTemporizadoresList = DatabaseManager.TemporizadorDAO.getAll();
             temporizadoresTable.setItems(FXCollections.observableArrayList(originalTemporizadoresList));
             temporizadoresTable.refresh();
+
+            // Call the new method to adjust column widths
+            adjustColumnWidths();
         } catch (DatabaseManager.DatabaseException e) {
             logger.error("Error loading temporizadores data", e);
             showAlert("An error occurred while loading the temporizadores.");

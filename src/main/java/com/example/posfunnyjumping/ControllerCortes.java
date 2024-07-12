@@ -14,6 +14,7 @@ import javafx.stage.Stage;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -72,8 +73,36 @@ public class ControllerCortes {
     private void setCortesCellValueFactories() {
         corteClaveColumn.setCellValueFactory(new PropertyValueFactory<>("clave"));
         corteEstadoColumn.setCellValueFactory(new PropertyValueFactory<>("estado"));
+
+        // Format the apertura column
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
         corteAperturaColumn.setCellValueFactory(new PropertyValueFactory<>("apertura"));
+        corteAperturaColumn.setCellFactory(column -> new TableCell<DatabaseManager.Corte, LocalDateTime>() {
+            @Override
+            protected void updateItem(LocalDateTime item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setText(null);
+                } else {
+                    setText(formatter.format(item));
+                }
+            }
+        });
+
+        // Format the cierre column
         corteCierreColumn.setCellValueFactory(new PropertyValueFactory<>("cierre"));
+        corteCierreColumn.setCellFactory(column -> new TableCell<DatabaseManager.Corte, LocalDateTime>() {
+            @Override
+            protected void updateItem(LocalDateTime item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setText(null);
+                } else {
+                    setText(formatter.format(item));
+                }
+            }
+        });
+
         corteVentasColumn.setCellValueFactory(new PropertyValueFactory<>("ventas"));
         corteReciboInicialColumn.setCellValueFactory(new PropertyValueFactory<>("reciboInicial"));
         corteReciboFinalColumn.setCellValueFactory(new PropertyValueFactory<>("reciboFinal"));
@@ -130,8 +159,13 @@ public class ControllerCortes {
         addDetailField(detailsBox, "Clave:", String.valueOf(corte.getClave()));
         addDetailField(detailsBox, "Estado:", corte.getEstado());
         detailsBox.getChildren().add(new Separator());
-        addDetailField(detailsBox, "Apertura:", corte.getApertura().toString());
-        addDetailField(detailsBox, "Cierre:", corte.getCierre() != null ? corte.getCierre().toString() : "N/A");
+
+
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
+
+        addDetailField(detailsBox, "Apertura:", corte.getApertura().format(formatter));
+        addDetailField(detailsBox, "Cierre:", corte.getCierre() != null ? corte.getCierre().format(formatter) : "");
+
         addDetailField(detailsBox, "Recibo Inicial:", String.valueOf(corte.getReciboInicial()));
         addDetailField(detailsBox, "Recibo Final:", String.valueOf(corte.getReciboFinal()));
 
@@ -157,7 +191,20 @@ public class ControllerCortes {
         claveColumn.setCellValueFactory(new PropertyValueFactory<>("claveVenta"));
 
         TableColumn<DatabaseManager.Venta, LocalDateTime> fechaColumn = new TableColumn<>("Fecha");
+
         fechaColumn.setCellValueFactory(new PropertyValueFactory<>("fechaVenta"));
+        fechaColumn.setCellFactory(column -> new TableCell<DatabaseManager.Venta, LocalDateTime>() {
+            @Override
+            protected void updateItem(LocalDateTime item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setText(null);
+                } else {
+                    setText(formatter.format(item));
+                }
+            }
+        });
+
 
         TableColumn<DatabaseManager.Venta, Double> totalColumn = new TableColumn<>("Total");
         totalColumn.setCellValueFactory(new PropertyValueFactory<>("total"));

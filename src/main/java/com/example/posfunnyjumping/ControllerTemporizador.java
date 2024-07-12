@@ -24,6 +24,11 @@ import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.util.Duration;
 
+import java.time.format.DateTimeFormatter;
+
+import javafx.scene.control.cell.PropertyValueFactory;
+
+
 public class ControllerTemporizador {
     private static final Logger logger = LoggerFactory.getLogger(ControllerTemporizador.class);
 
@@ -49,6 +54,7 @@ public class ControllerTemporizador {
     private TextField BuscarTextField;
     @FXML
     private Button clearSearchButton;
+
 
     @FXML
     private void onClearSearchButtonClick() {
@@ -111,7 +117,22 @@ public class ControllerTemporizador {
     private void setTemporizadoresCellValueFactories() {
         temporizadorClaveVentaColumn.setCellValueFactory(new PropertyValueFactory<>("claveVenta"));
         temporizadorNombreColumn.setCellValueFactory(new PropertyValueFactory<>("nombre"));
+
+        // Format the date column
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
         temporizadorFechaColumn.setCellValueFactory(new PropertyValueFactory<>("fecha"));
+        temporizadorFechaColumn.setCellFactory(column -> new TableCell<DatabaseManager.TemporizadorDAO.Temporizador, LocalDateTime>() {
+            @Override
+            protected void updateItem(LocalDateTime item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setText(null);
+                } else {
+                    setText(formatter.format(item));
+                }
+            }
+        });
+
         temporizadorMinutosColumn.setCellValueFactory(new PropertyValueFactory<>("minutos"));
     }
 

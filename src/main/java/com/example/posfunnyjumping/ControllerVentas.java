@@ -13,6 +13,7 @@ import javafx.stage.Stage;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Consumer;
@@ -86,15 +87,52 @@ public class ControllerVentas {
         }
         if (ventaPartidaPrecioColumn != null) {
             ventaPartidaPrecioColumn.setCellValueFactory(new PropertyValueFactory<>("precioUnitario"));
+            ventaPartidaPrecioColumn.setCellFactory(tc -> new TableCell<DatabaseManager.PartidaVenta, Double>() {
+                @Override
+                protected void updateItem(Double price, boolean empty) {
+                    super.updateItem(price, empty);
+                    if (empty || price == null) {
+                        setText(null);
+                    } else {
+                        setText(String.format("%.2f", price));
+                    }
+                }
+            });
         }
         if (ventaPartidaSubtotalColumn != null) {
             ventaPartidaSubtotalColumn.setCellValueFactory(new PropertyValueFactory<>("subtotal"));
+            ventaPartidaSubtotalColumn.setCellFactory(tc -> new TableCell<DatabaseManager.PartidaVenta, Double>() {
+                @Override
+                protected void updateItem(Double subtotal, boolean empty) {
+                    super.updateItem(subtotal, empty);
+                    if (empty || subtotal == null) {
+                        setText(null);
+                    } else {
+                        setText(String.format("%.2f", subtotal));
+                    }
+                }
+            });
         }
     }
 
     private void setVentasCellValueFactories() {
         ventaFolioColumn.setCellValueFactory(new PropertyValueFactory<>("claveVenta"));
+
+        // Format the date column
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
         ventaFechaColumn.setCellValueFactory(new PropertyValueFactory<>("fechaVenta"));
+        ventaFechaColumn.setCellFactory(column -> new TableCell<DatabaseManager.Venta, LocalDateTime>() {
+            @Override
+            protected void updateItem(LocalDateTime item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setText(null);
+                } else {
+                    setText(formatter.format(item));
+                }
+            }
+        });
+
         ventaTotalColumn.setCellValueFactory(new PropertyValueFactory<>("total"));
         ventaMetodoPagoColumn.setCellValueFactory(new PropertyValueFactory<>("metodoPago"));
         ventaCorteColumn.setCellValueFactory(new PropertyValueFactory<>("clave_corte"));
@@ -112,7 +150,22 @@ public class ControllerVentas {
             Parent root = loader.load();
 
             initializeDetallesVentaView();
-            populateDetallesVenta(venta);
+
+            // Create a DateTimeFormatter
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
+
+            // Format the date-time field
+            String formattedDateTime = venta.getFechaVenta().format(formatter);
+
+            ventaDetallesFolioTextField.setText(String.valueOf(venta.getClaveVenta()));
+            ventaDetallesFechaTextField.setText(formattedDateTime);
+            ventaDetallesTotalTextField.setText(String.format("%.2f", venta.getTotal()));
+            ventaDetallesCorteTextField.setText(String.valueOf(venta.getClave_corte()));
+            ventaDetallesMetodoPagoTextField.setText(String.valueOf(venta.getMetodoPago()));
+
+            // Load the partidas for this venta
+            List<DatabaseManager.PartidaVenta> partidas = DatabaseManager.VentaDAO.getPartidasByVenta(venta.getClaveVenta());
+            ventaDetallesTableView.setItems(FXCollections.observableArrayList(partidas));
 
             Stage stage = (Stage) ventasTable.getScene().getWindow();
             Scene scene = new Scene(root);

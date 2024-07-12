@@ -73,14 +73,14 @@ public class ControllerUsuarios {
         PasswordField contrasenaField = new PasswordField();
         contrasenaField.setId("contrasenaField");
         if (usuario.getClave() != 0) {
-            contrasenaField.setPromptText("Dejar en blanco para no cambiar");
+            contrasenaField.setPromptText("Deje en blanco para no cambiar");
         }
 
         grid.add(new Label("Clave:"), 0, 0);
         grid.add(claveField, 1, 0);
         grid.add(new Label("Nombre:"), 0, 1);
         grid.add(nombreField, 1, 1);
-        grid.add(new Label("contrasena:"), 0, 2);
+        grid.add(new Label("Contraseña:"), 0, 2);
         grid.add(contrasenaField, 1, 2);
 
         nombreField.setTooltip(new Tooltip("Ingrese el nombre del usuario"));

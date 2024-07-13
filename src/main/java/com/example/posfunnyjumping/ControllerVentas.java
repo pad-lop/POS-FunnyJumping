@@ -116,7 +116,6 @@ public class ControllerVentas {
     }
 
 
-
     private void setVentasCellValueFactories() {
         ventaFolioColumn.setCellValueFactory(new PropertyValueFactory<>("claveVenta"));
 
@@ -233,6 +232,44 @@ public class ControllerVentas {
             e.printStackTrace();
             showErrorAlert("Error al cargar la vista de Consulta Ventas");
         }
+    }
+
+    @FXML
+    private void onImprimirTicketClick() {
+        try {
+            // Get the current venta details
+            int folio = Integer.parseInt(ventaDetallesFolioTextField.getText());
+            LocalDateTime fechaVenta = LocalDateTime.parse(ventaDetallesFechaTextField.getText(),
+                    DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss"));
+            String metodoPago = ventaDetallesMetodoPagoTextField.getText();
+            int corte = Integer.parseInt(ventaDetallesCorteTextField.getText());
+            double total = Double.parseDouble(ventaDetallesTotalTextField.getText());
+
+            // Create a Venta object with the current details
+            DatabaseManager.Venta venta = new DatabaseManager.Venta(
+                    folio, fechaVenta, total, corte
+            );
+
+            venta.setMetodoPago(metodoPago);
+
+            // Get the partidas from the table view
+            List<DatabaseManager.PartidaVenta> partidas = ventaDetallesTableView.getItems();
+
+            // Print the ticket
+            TicketPrinter.printTicket(venta, partidas);
+
+            showInfoAlert("Ticket impreso correctamente");
+        } catch (Exception e) {
+            showErrorAlert("Error al imprimir el ticket: " + e.getMessage());
+        }
+    }
+
+    private void showInfoAlert(String message) {
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle("Información");
+        alert.setHeaderText(null);
+        alert.setContentText(message);
+        alert.showAndWait();
     }
 
     private void showErrorAlert(String message) {

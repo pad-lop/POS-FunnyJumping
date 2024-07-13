@@ -1,7 +1,6 @@
 package com.example.posfunnyjumping;
 
 import javafx.print.*;
-import javafx.scene.Node;
 import javafx.scene.control.Label;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
@@ -43,26 +42,30 @@ public class TicketPrinter {
 
         // Items
         addLine(content, "Cant. Descripción                Precio   Subtotal", true);
-        addLine(content, "------------------------------------------------", false);
+        addLine(content, "------------------------------------------------");
         for (DatabaseManager.PartidaVenta partida : partidas) {
-            String line = String.format("%-5d %-25s $%-7.2f $%-7.2f",
+            String line = String.format("%-5.0f %-25s $%-7.2f $%-7.2f",
                     partida.getCantidad(),
                     truncateString(partida.getDescripcion(), 25),
                     partida.getPrecioUnitario(),
                     partida.getSubtotal());
-            addLine(content, line, false);
+
+
+            addLine(content, line);
         }
-        addLine(content, "------------------------------------------------", false);
+
+
+        addLine(content, "------------------------------------------------");
 
         // Totals
         addLine(content, String.format("Total:                             $%.2f", venta.getTotal()), true);
-        addLine(content, String.format("Monto pagado:                      $%.2f", venta.getMontoPago()), false);
-        addLine(content, String.format("Cambio:                            $%.2f", venta.getCambio()), false);
+        addLine(content, String.format("Monto pagado:                      $%.2f", venta.getMontoPago()));
+        addLine(content, String.format("Cambio:                            $%.2f", venta.getCambio()));
 
         // Footer
         content.getChildren().add(new Text(""));
         addLine(content, "¡Gracias por su compra!", true);
-        addLine(content, "Vuelva pronto", false);
+        addLine(content, "Vuelva pronto");
 
         return content;
     }
@@ -71,6 +74,11 @@ public class TicketPrinter {
         Label label = new Label(text);
         label.setFont(Font.font("Monospaced", bold ? FontWeight.BOLD : FontWeight.NORMAL, 10));
         content.getChildren().add(label);
+    }
+
+    // Overloaded method with default bold value
+    private static void addLine(VBox content, String text) {
+        addLine(content, text, false);
     }
 
     private static String truncateString(String str, int maxLength) {

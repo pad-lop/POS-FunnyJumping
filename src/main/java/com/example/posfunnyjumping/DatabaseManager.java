@@ -19,9 +19,9 @@ public class DatabaseManager {
 
 
     private static final String CREATE_TABLE_USUARIOS = "CREATE TABLE IF NOT EXISTS usuarios (" +
-    "clave INTEGER PRIMARY KEY AUTOINCREMENT, " +
-    "nombre TEXT NOT NULL, " +
-    "contrasena TEXT NOT NULL)";
+            "clave INTEGER PRIMARY KEY AUTOINCREMENT, " +
+            "nombre TEXT NOT NULL, " +
+            "contrasena TEXT NOT NULL)";
     private static final String CREATE_TABLE_CORTES = "CREATE TABLE IF NOT EXISTS cortes (" +
             "clave INTEGER PRIMARY KEY AUTOINCREMENT, " +
             "estado TEXT NOT NULL, " +
@@ -288,7 +288,7 @@ public class DatabaseManager {
 
     // Venta related methods
     public static class Venta {
-        private final int claveVenta;
+        private int claveVenta;
         private final LocalDateTime fechaVenta;
         private final double total;
         private final int clave_corte; // New attribute
@@ -309,6 +309,10 @@ public class DatabaseManager {
             return clave_corte;
         }
 
+
+        public void setClaveVenta(int claveVenta) {
+            this.claveVenta = claveVenta;
+        }
 
         // Getters
         public int getClaveVenta() {
@@ -470,6 +474,7 @@ public class DatabaseManager {
                     try (ResultSet generatedKeys = ventaStmt.getGeneratedKeys()) {
                         if (generatedKeys.next()) {
                             int ventaId = generatedKeys.getInt(1);
+                            venta.setClaveVenta(ventaId); // Assuming you have a setter for claveVenta in Venta class
 
                             // Create a list to store Temporizador objects
                             List<TemporizadorDAO.Temporizador> temporizadores = new ArrayList<>();
@@ -496,11 +501,15 @@ public class DatabaseManager {
                             partidaStmt.executeBatch();
                             conn.commit();
 
-
                             // Now insert all temporizadores
                             for (TemporizadorDAO.Temporizador temporizador : temporizadores) {
                                 TemporizadorDAO.insert(temporizador);
                             }
+
+                            // Print the ticket
+                            javafx.application.Platform.runLater(() -> {
+                                TicketPrinter.printTicket(venta, partidas);
+                            });
                         }
                     }
                 } catch (SQLException e) {

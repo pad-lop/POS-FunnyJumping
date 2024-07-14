@@ -11,6 +11,7 @@ module com.example.posfunnyjumping {
     requires java.sql;
     requires com.zaxxer.hikari;
     requires org.slf4j;
+    requires org.apache.pdfbox;
 
 
     opens com.example.posfunnyjumping;

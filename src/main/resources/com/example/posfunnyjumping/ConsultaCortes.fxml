@@ -54,10 +54,10 @@
                         <TableColumn fx:id="corteEstadoColumn" editable="false" prefWidth="106.0" sortable="false" text="Estado" />
                         <TableColumn fx:id="corteAperturaColumn" editable="false" prefWidth="81.5" sortable="false" text="Apertura" />
                         <TableColumn fx:id="corteCierreColumn" editable="false" prefWidth="87.0" sortable="false" text="Cierre" />
-                  <TableColumn prefWidth="168.5" text="Recibos">
+                  <TableColumn prefWidth="75.0" text="Recibos">
                      <columns>
-                              <TableColumn fx:id="corteReciboInicialColumn" editable="false" prefWidth="92.0" sortable="false" text="Inicial" />
-                              <TableColumn fx:id="corteReciboFinalColumn" editable="false" prefWidth="106.0" sortable="false" text="Final" />
+                              <TableColumn fx:id="corteReciboInicialColumn" editable="false" prefWidth="41.0" sortable="false" text="Inicial" />
+                              <TableColumn fx:id="corteReciboFinalColumn" editable="false" prefWidth="49.5" sortable="false" text="Final" />
                      </columns>
                   </TableColumn>
                         <TableColumn fx:id="corteFondoAperturaColumn" editable="false" prefWidth="192.0" sortable="false" text="Fondo Apertura" />

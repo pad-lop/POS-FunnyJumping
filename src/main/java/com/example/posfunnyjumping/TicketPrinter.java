@@ -1,84 +1,107 @@
 package com.example.posfunnyjumping;
 
-import javafx.print.*;
-import javafx.scene.control.Label;
-import javafx.scene.layout.VBox;
-import javafx.scene.text.Font;
-import javafx.scene.text.FontWeight;
-import javafx.scene.text.Text;
+import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.pdmodel.PDPage;
+import org.apache.pdfbox.pdmodel.PDPageContentStream;
+import org.apache.pdfbox.pdmodel.common.PDRectangle;
+import org.apache.pdfbox.pdmodel.font.PDType1Font;
 
+import java.io.IOException;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.ArrayList;
 
 public class TicketPrinter {
 
-    public static void printTicket(DatabaseManager.Venta venta, List<DatabaseManager.PartidaVenta> partidas) {
-        PrinterJob job = PrinterJob.createPrinterJob();
-        if (job != null && job.showPrintDialog(null)) {
-            PageLayout pageLayout = job.getPrinter().createPageLayout(Paper.NA_LETTER, PageOrientation.PORTRAIT, Printer.MarginType.DEFAULT);
-            VBox content = createTicketContent(venta, partidas);
+    private static final float POINT_TO_MM = 2.83465f;
+    private static final float PAGE_WIDTH = 80 * POINT_TO_MM;
+    private static final float MARGIN = 5 * POINT_TO_MM;
+    private static final float FONT_SIZE = 8;
+    private static final float LEADING = 1.5f * FONT_SIZE;
 
-            if (job.printPage(pageLayout, content)) {
-                job.endJob();
+    public static void printTicket(DatabaseManager.Venta venta, List<DatabaseManager.PartidaVenta> partidas) {
+        try (PDDocument document = new PDDocument()) {
+
+            List<String> contentLines = generateContentLines(venta, partidas);
+            float pageHeight = calculatePageHeight(contentLines);
+
+            PDPage page = new PDPage(new PDRectangle(PAGE_WIDTH, pageHeight));
+            document.addPage(page);
+
+            try (PDPageContentStream contentStream = new PDPageContentStream(document, page)) {
+                float y = pageHeight - MARGIN;
+
+                for (String line : contentLines) {
+                    if (line.startsWith("HEADER:")) {
+                        y = addText(contentStream, line.substring(7), y, PDType1Font.COURIER_BOLD, 12);
+                    } else if (line.startsWith("BOLD:")) {
+                        y = addText(contentStream, line.substring(5), y, PDType1Font.COURIER_BOLD);
+                    } else {
+                        y = addText(contentStream, line, y, PDType1Font.COURIER);
+                    }
+                }
             }
+
+            document.save("ticket.pdf");
+            System.out.println("Ticket saved as ticket.pdf");
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 
-    private static VBox createTicketContent(DatabaseManager.Venta venta, List<DatabaseManager.PartidaVenta> partidas) {
-        VBox content = new VBox(10);
-        content.setStyle("-fx-padding: 20;");
-
-        // Header
-        Text header = new Text("Funny Jumping");
-        header.setFont(Font.font("Arial", FontWeight.BOLD, 18));
-        content.getChildren().add(header);
-
-        // Sale details
+    private static List<String> generateContentLines(DatabaseManager.Venta venta, List<DatabaseManager.PartidaVenta> partidas) {
+        List<String> lines = new ArrayList<>();
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
-        addLine(content, "Folio: " + venta.getClaveVenta());
-        addLine(content, "Fecha: " + venta.getFechaVenta().format(formatter));
-        addLine(content, "Método de pago: " + venta.getMetodoPago());
-        content.getChildren().add(new Text(""));
 
-        // Items
-        addLine(content, "Cant. Descripción                Precio   Subtotal", true);
-        addLine(content, "------------------------------------------------");
+        lines.add("HEADER:Funny Jumping");
+        lines.add("");
+        lines.add("Folio: " + venta.getClaveVenta());
+        lines.add("Fecha: " + venta.getFechaVenta().format(formatter));
+        lines.add("Método de pago: " + venta.getMetodoPago());
+        lines.add("");
+        lines.add("BOLD:Cant. Descripción         Precio   Subtotal");
+        lines.add("────────────────────────────────────────");
+
         for (DatabaseManager.PartidaVenta partida : partidas) {
-            String line = String.format("%-5.0f %-25s $%-7.2f $%-7.2f",
+            String line = String.format("%-5.0f %-20s $%-7.2f $%-7.2f",
                     partida.getCantidad(),
-                    truncateString(partida.getDescripcion(), 25),
+                    truncateString(partida.getDescripcion(), 20),
                     partida.getPrecioUnitario(),
                     partida.getSubtotal());
-
-
-            addLine(content, line);
+            lines.add(line);
         }
+        lines.add("────────────────────────────────────────");
+        lines.add(String.format("BOLD:Total:               $%.2f", venta.getTotal()));
+        lines.add(String.format("Monto pagado:        $%.2f", venta.getMontoPago()));
+        lines.add(String.format("Cambio:              $%.2f", venta.getCambio()));
+        lines.add("");
+        lines.add("BOLD:¡Gracias por su compra!");
+        lines.add("Vuelva pronto");
 
-
-        addLine(content, "------------------------------------------------");
-
-        // Totals
-        addLine(content, String.format("Total:                             $%.2f", venta.getTotal()), true);
-        addLine(content, String.format("Monto pagado:                      $%.2f", venta.getMontoPago()));
-        addLine(content, String.format("Cambio:                            $%.2f", venta.getCambio()));
-
-        // Footer
-        content.getChildren().add(new Text(""));
-        addLine(content, "¡Gracias por su compra!", true);
-        addLine(content, "Vuelva pronto");
-
-        return content;
+        return lines;
     }
 
-    private static void addLine(VBox content, String text, boolean bold) {
-        Label label = new Label(text);
-        label.setFont(Font.font("Monospaced", bold ? FontWeight.BOLD : FontWeight.NORMAL, 10));
-        content.getChildren().add(label);
+    private static float calculatePageHeight(List<String> contentLines) {
+        int lineCount = contentLines.size();
+        float contentHeight = lineCount * LEADING;
+        return contentHeight + (2 * MARGIN); // Add top and bottom margins
     }
 
-    // Overloaded method with default bold value
-    private static void addLine(VBox content, String text) {
-        addLine(content, text, false);
+    private static float addText(PDPageContentStream contentStream, String text, float y) throws IOException {
+        return addText(contentStream, text, y, PDType1Font.COURIER, FONT_SIZE);
+    }
+
+    private static float addText(PDPageContentStream contentStream, String text, float y, PDType1Font font) throws IOException {
+        return addText(contentStream, text, y, font, FONT_SIZE);
+    }
+
+    private static float addText(PDPageContentStream contentStream, String text, float y, PDType1Font font, float fontSize) throws IOException {
+        contentStream.beginText();
+        contentStream.setFont(font, fontSize);
+        contentStream.newLineAtOffset(MARGIN, y);
+        contentStream.showText(text);
+        contentStream.endText();
+        return y - LEADING;
     }
 
     private static String truncateString(String str, int maxLength) {

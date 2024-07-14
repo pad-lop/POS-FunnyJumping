@@ -168,12 +168,18 @@ public class ControllerVentas {
             List<DatabaseManager.PartidaVenta> partidas = DatabaseManager.VentaDAO.getPartidasByVenta(venta.getClaveVenta());
             ventaDetallesTableView.setItems(FXCollections.observableArrayList(partidas));
 
-            Stage stage = (Stage) ventasTable.getScene().getWindow();
-            Scene scene = new Scene(root);
-            stage.setScene(scene);
-            stage.show();
+            // Create a new stage for the details view
+            Stage detailsStage = new Stage();
+            detailsStage.setTitle("Detalles de Venta");
+            detailsStage.setScene(new Scene(root));
+            detailsStage.setResizable(true);
+
+            // Show the stage
+            detailsStage.show();
+
         } catch (IOException e) {
             e.printStackTrace();
+            showErrorAlert("Error al cargar los detalles de la venta");
         }
     }
 
@@ -219,19 +225,10 @@ public class ControllerVentas {
     }
 
     @FXML
-    private void onRegresarVentaClick() {
-        try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("ConsultaVentas.fxml"));
-            Parent root = loader.load();
-
-            Stage stage = (Stage) ventaDetallesTableView.getScene().getWindow();
-            Scene scene = new Scene(root);
-            stage.setScene(scene);
-            stage.show();
-        } catch (IOException e) {
-            e.printStackTrace();
-            showErrorAlert("Error al cargar la vista de Consulta Ventas");
-        }
+    private void onRegresarVentaClick(ActionEvent event) {
+        // Close the details stage
+        Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
+        stage.close();
     }
 
     @FXML

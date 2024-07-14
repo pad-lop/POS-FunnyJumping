@@ -10,6 +10,7 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.text.Text;
 import javafx.stage.Stage;
 
 import java.io.IOException;
@@ -110,6 +111,32 @@ public class ControllerCortes {
         corteDiferenciaColumn.setCellValueFactory(new PropertyValueFactory<>("diferencia"));
     }
 
+    private void autoResizeColumns(TableView<?> table) {
+        table.setColumnResizePolicy(TableView.UNCONSTRAINED_RESIZE_POLICY);
+
+        for (TableColumn<?, ?> column : table.getColumns()) {
+            // Set a minimum width for the column
+            column.setMinWidth(20);
+
+            // Resize the column based on its content
+            column.setPrefWidth(column.getWidth());
+
+            Text text = new Text(column.getText());
+            double max = text.getLayoutBounds().getWidth();
+            for (int i = 0; i < table.getItems().size(); i++) {
+                // Check if the cell value is not null
+                if (column.getCellData(i) != null) {
+                    text = new Text(column.getCellData(i).toString());
+                    double calcWidth = text.getLayoutBounds().getWidth();
+                    if (calcWidth > max) {
+                        max = calcWidth;
+                    }
+                }
+            }
+            column.setPrefWidth(max + 10.0d); // Add some padding
+        }
+    }
+
     private void setCorteButtonColumns() {
         corteDetallesColumn.setCellFactory(param -> new TableCell<>() {
             private final Button button = new Button("Detalles");
@@ -147,7 +174,8 @@ public class ControllerCortes {
         dialog.setHeaderText("Corte #" + corte.getClave());
 
         ButtonType closeButtonType = new ButtonType("Cerrar", ButtonBar.ButtonData.CANCEL_CLOSE);
-        dialog.getDialogPane().getButtonTypes().addAll(closeButtonType);
+        ButtonType printButtonType = new ButtonType("Imprimir", ButtonBar.ButtonData.OK_DONE);
+        dialog.getDialogPane().getButtonTypes().addAll(printButtonType, closeButtonType);
 
         GridPane grid = new GridPane();
         grid.setHgap(10);
@@ -221,6 +249,15 @@ public class ControllerCortes {
         grid.add(salesBox, 1, 0);
 
         dialog.getDialogPane().setContent(grid);
+
+        // Get the print button from the dialog pane
+        Button printButton = (Button) dialog.getDialogPane().lookupButton(printButtonType);
+        printButton.addEventFilter(ActionEvent.ACTION, event -> {
+            event.consume(); // prevent dialog from closing
+            List<DatabaseManager.Venta> ventasDelCorte = DatabaseManager.VentaDAO.getVentasByCorte(corte.getClave());
+            CortePrinter.printCorte(corte, ventasDelCorte);
+        });
+
         dialog.showAndWait();
     }
 
@@ -258,6 +295,7 @@ public class ControllerCortes {
             List<DatabaseManager.Corte> cortesList = DatabaseManager.CorteDAO.getAllCortes();
             cortesTable.setItems(FXCollections.observableArrayList(cortesList));
             cortesTable.refresh();
+            autoResizeColumns(cortesTable); // Add this line
         } catch (DatabaseManager.DatabaseException e) {
             showErrorAlert("Error al cargar los datos de cortes: " + e.getMessage());
         }

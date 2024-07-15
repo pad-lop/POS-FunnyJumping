@@ -5,6 +5,8 @@ import javafx.collections.FXCollections;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
+import javafx.geometry.HPos;
+import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
@@ -20,6 +22,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 import javafx.scene.layout.GridPane;
 import javafx.geometry.Insets;
@@ -177,50 +180,111 @@ public class ControllerCortes {
         ButtonType printButtonType = new ButtonType("Imprimir", ButtonBar.ButtonData.OK_DONE);
         dialog.getDialogPane().getButtonTypes().addAll(printButtonType, closeButtonType);
 
+        // Main layout
+        HBox mainLayout = new HBox(50);
+        mainLayout.setPadding(new Insets(10));
+
+        // Left side - fields and labels in a GridPane
+        VBox leftSide = new VBox(10);
         GridPane grid = new GridPane();
         grid.setHgap(10);
         grid.setVgap(10);
-        grid.setPadding(new Insets(20, 150, 10, 10));
 
-        // Left column for corte details
-        VBox detailsBox = new VBox(10);
-        addDetailField(detailsBox, "Clave:", String.valueOf(corte.getClave()));
-        addDetailField(detailsBox, "Estado:", corte.getEstado());
-        detailsBox.getChildren().add(new Separator());
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+        String boldStyle = "-fx-font-weight: bold;";
 
+        addDetailField(grid, 0, "Clave:", String.valueOf(corte.getClave()));
+        addDetailField(grid, 1, "Estado:", corte.getEstado());
+        addDetailField(grid, 2, "Apertura:", corte.getApertura().format(formatter));
+        addDetailField(grid, 3, "Cierre:", corte.getCierre() != null ? corte.getCierre().format(formatter) : "");
+        addDetailField(grid, 4, "Recibo Inicial:", String.valueOf(corte.getReciboInicial()));
+        addDetailField(grid, 5, "Recibo Final:", String.valueOf(corte.getReciboFinal()));
 
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
+        grid.add(new Separator(), 0, 6, 2, 1);
 
-        addDetailField(detailsBox, "Apertura:", corte.getApertura().format(formatter));
-        addDetailField(detailsBox, "Cierre:", corte.getCierre() != null ? corte.getCierre().format(formatter) : "");
+        addDetailField(grid, 7, "Ventas Efectivo:", String.format("%.2f", corte.getVentasEfectivo()), boldStyle);
+        addDetailField(grid, 8, "Ventas Tarjeta:", String.format("%.2f", corte.getVentasTarjeta()), boldStyle);
+        addDetailField(grid, 9, "Total Ventas:", String.format("%.2f", corte.getVentas()), boldStyle);
 
-        addDetailField(detailsBox, "Recibo Inicial:", String.valueOf(corte.getReciboInicial()));
-        addDetailField(detailsBox, "Recibo Final:", String.valueOf(corte.getReciboFinal()));
+        grid.add(new Separator(), 0, 10, 2, 1);
 
-        detailsBox.getChildren().add(new Separator());
+        addDetailField(grid, 11, "+ Total Efectivo:", String.format("%.2f", corte.getTotalEfectivo()));
+        addDetailField(grid, 12, "- Fondo Apertura:", String.format("%.2f", corte.getFondoApertura()));
+        addDetailField(grid, 13, "+ Pago con Tarjeta:", String.format("%.2f", corte.getTotalTarjeta()));
 
-        addDetailField(detailsBox, "+ Total Efectivo:", String.format("%.2f", corte.getTotalEfectivo()));
-        addDetailField(detailsBox, "- Fondo Apertura:", String.format("%.2f", corte.getFondoApertura()));
-        addDetailField(detailsBox, "+ Pago con Tarjeta:", String.format("%.2f", corte.getTotalTarjeta()));
+        grid.add(new Separator(), 0, 14, 2, 1);
 
-        detailsBox.getChildren().add(new Separator());
+        addDetailField(grid, 15, "Total Caja:", String.format("%.2f", corte.getTotalCaja()), boldStyle);
+        addDetailField(grid, 16, "Ventas:", String.format("%.2f", corte.getVentas()), boldStyle);
+        addDetailField(grid, 17, "Diferencia:", String.format("%.2f", corte.getDiferencia()), boldStyle);
 
-        addDetailField(detailsBox, "Total Caja:", String.format("%.2f", corte.getTotalCaja()));
-        addDetailField(detailsBox, "Ventas:", String.format("%.2f", corte.getVentas()));
-        addDetailField(detailsBox, "Diferencia:", String.format("%.2f", corte.getDiferencia()));
+        leftSide.getChildren().add(grid);
 
-        grid.add(detailsBox, 0, 0);
+        // Right side - tables
+        VBox rightSide = new VBox(10);
+        rightSide.setPrefWidth(300);
 
-        // Right column for sales table
-        TableView<DatabaseManager.Venta> salesTable = new TableView<>();
-        salesTable.setMaxHeight(400);
+        // Create sales tables
+        TableView<DatabaseManager.Venta> ventasEfectivoTable = createVentasTableDetallesCorte();
+        TableView<DatabaseManager.Venta> ventasTarjetaTable = createVentasTableDetallesCorte();
+
+        // Get sales for this corte
+        List<DatabaseManager.Venta> ventas = DatabaseManager.VentaDAO.getVentasByCorte(corte.getClave());
+
+        // Filter ventas
+        List<DatabaseManager.Venta> ventasEfectivoList = ventas.stream()
+                .filter(v -> "Efectivo".equals(v.getMetodoPago()))
+                .collect(Collectors.toList());
+
+        List<DatabaseManager.Venta> ventasTarjetaList = ventas.stream()
+                .filter(v -> "Tarjeta".equals(v.getMetodoPago()))
+                .collect(Collectors.toList());
+
+        ventasEfectivoTable.setItems(FXCollections.observableArrayList(ventasEfectivoList));
+        ventasTarjetaTable.setItems(FXCollections.observableArrayList(ventasTarjetaList));
+
+        // Create labels for totals
+        Label efectivoLabel = new Label("Ventas en Efectivo - Total: $" + String.format("%.2f", corte.getVentasEfectivo()));
+        Label tarjetaLabel = new Label("Ventas con Tarjeta - Total: $" + String.format("%.2f", corte.getVentasTarjeta()));
+        efectivoLabel.setStyle(boldStyle);
+        tarjetaLabel.setStyle(boldStyle);
+
+        // Add tables and labels to the right side
+        rightSide.getChildren().addAll(
+                efectivoLabel, ventasEfectivoTable,
+                tarjetaLabel, ventasTarjetaTable
+        );
+
+        // Add both sides to the main layout
+        mainLayout.getChildren().addAll(leftSide, rightSide);
+
+        // Use a ScrollPane to allow scrolling if the content is too large
+        ScrollPane scrollPane = new ScrollPane(mainLayout);
+        scrollPane.setFitToWidth(true);
+        scrollPane.setFitToHeight(true);
+
+        dialog.getDialogPane().setContent(scrollPane);
+
+        // Get the print button from the dialog pane
+        Button printButton = (Button) dialog.getDialogPane().lookupButton(printButtonType);
+        printButton.addEventFilter(ActionEvent.ACTION, event -> {
+            event.consume(); // prevent dialog from closing
+            CortePrinter.printCorte(corte, ventas);
+        });
+
+        dialog.showAndWait();
+    }
+
+    private TableView<DatabaseManager.Venta> createVentasTableDetallesCorte() {
+        TableView<DatabaseManager.Venta> table = new TableView<>();
+        table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
 
         TableColumn<DatabaseManager.Venta, Integer> claveColumn = new TableColumn<>("Clave");
         claveColumn.setCellValueFactory(new PropertyValueFactory<>("claveVenta"));
 
         TableColumn<DatabaseManager.Venta, LocalDateTime> fechaColumn = new TableColumn<>("Fecha");
-
         fechaColumn.setCellValueFactory(new PropertyValueFactory<>("fechaVenta"));
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
         fechaColumn.setCellFactory(column -> new TableCell<DatabaseManager.Venta, LocalDateTime>() {
             @Override
             protected void updateItem(LocalDateTime item, boolean empty) {
@@ -233,32 +297,41 @@ public class ControllerCortes {
             }
         });
 
-
         TableColumn<DatabaseManager.Venta, Double> totalColumn = new TableColumn<>("Total");
         totalColumn.setCellValueFactory(new PropertyValueFactory<>("total"));
-
-        salesTable.getColumns().addAll(claveColumn, fechaColumn, totalColumn);
-
-        // Get sales for this corte
-        List<DatabaseManager.Venta> ventas = DatabaseManager.VentaDAO.getVentasByCorte(corte.getClave());
-        salesTable.setItems(FXCollections.observableArrayList(ventas));
-
-        VBox salesBox = new VBox(10);
-        salesBox.getChildren().addAll(new Label("Ventas del Corte:"), salesTable);
-
-        grid.add(salesBox, 1, 0);
-
-        dialog.getDialogPane().setContent(grid);
-
-        // Get the print button from the dialog pane
-        Button printButton = (Button) dialog.getDialogPane().lookupButton(printButtonType);
-        printButton.addEventFilter(ActionEvent.ACTION, event -> {
-            event.consume(); // prevent dialog from closing
-            List<DatabaseManager.Venta> ventasDelCorte = DatabaseManager.VentaDAO.getVentasByCorte(corte.getClave());
-            CortePrinter.printCorte(corte, ventasDelCorte);
+        totalColumn.setCellFactory(column -> new TableCell<DatabaseManager.Venta, Double>() {
+            @Override
+            protected void updateItem(Double item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setText(null);
+                } else {
+                    setText(String.format("$%.2f", item));
+                }
+            }
         });
 
-        dialog.showAndWait();
+        table.getColumns().addAll(claveColumn, fechaColumn, totalColumn);
+        table.setPrefHeight(200);
+
+        return table;
+    }
+
+    private void addDetailField(GridPane grid, int row, String label, String value) {
+        addDetailField(grid, row, label, value, null);
+    }
+
+    private void addDetailField(GridPane grid, int row, String label, String value, String style) {
+        Label labelNode = new Label(label);
+        TextField field = new TextField(value);
+        field.setEditable(false);
+        field.setPrefWidth(120);
+        if (style != null) {
+            labelNode.setStyle(style);
+            field.setStyle(style);
+        }
+        grid.add(labelNode, 0, row);
+        grid.add(field, 1, row);
     }
 
     private void addDetailField(VBox container, String label, String value) {
@@ -299,14 +372,6 @@ public class ControllerCortes {
         } catch (DatabaseManager.DatabaseException e) {
             showErrorAlert("Error al cargar los datos de cortes: " + e.getMessage());
         }
-    }
-
-
-    private void showErrorAlert(String message) {
-        Alert alert = new Alert(Alert.AlertType.ERROR);
-        alert.setTitle("Error");
-        alert.setHeaderText(message);
-        alert.showAndWait();
     }
 
 
@@ -371,7 +436,7 @@ public class ControllerCortes {
                         // Validate user
                         Optional<DatabaseManager.Usuario> usuario = DatabaseManager.UsuarioDAO.getById(claveEncargado);
                         if (usuario.isPresent()) {
-                            return new DatabaseManager.Corte(0, "Abierto", LocalDateTime.now(), null, 0, 0, fondoApertura, 0, 0, 0, 0, 0, claveEncargado, usuario.get().getNombre());
+                            return new DatabaseManager.Corte(0, "Abierto", LocalDateTime.now(), null, 0, 0, fondoApertura, 0, 0, 0, 0, 0, 0, 0, claveEncargado, usuario.get().getNombre());
                         } else {
                             showErrorAlert("Usuario no encontrado. Por favor, ingrese una clave de encargado válida.");
                             return null;
@@ -395,38 +460,70 @@ public class ControllerCortes {
         }
     }
 
+
     @FXML
     protected void onCerrarCorteButtonClick(ActionEvent event) throws IOException {
         DatabaseManager.Corte lastOpenCorte = DatabaseManager.CorteDAO.getLastOpenCorte().orElse(null);
         if (lastOpenCorte != null) {
             List<DatabaseManager.Venta> ventasSinCorte = DatabaseManager.VentaDAO.getVentasSinCorte();
-            double totalVentas = DatabaseManager.VentaDAO.getTotalVentasSinCorte();
+
+            double ventasEfectivo = DatabaseManager.VentaDAO.getTotalVentasEfectivoSinCorte();
+            double ventasTarjeta = DatabaseManager.VentaDAO.getTotalVentasTarjetaSinCorte();
+
+            double totalVentas = ventasEfectivo + ventasTarjeta;
 
             if (ventasSinCorte.isEmpty() || totalVentas == 0) {
-                Platform.runLater(() -> {
-                    Alert alert = new Alert(Alert.AlertType.WARNING);
-                    alert.setTitle("No hay ventas");
-                    alert.setHeaderText("No se puede cerrar el corte");
-                    alert.setContentText("No se han registrado ventas desde la apertura del corte.");
-                    alert.showAndWait();
-                });
-                return; // Exit the method early, preventing corte closure
+                showWarningAlert("No hay ventas", "No se puede cerrar el corte", "No se han registrado ventas desde la apertura del corte.");
+                return;
             }
+
             Platform.runLater(() -> {
                 Dialog<DatabaseManager.Corte> dialog = new Dialog<>();
+
                 dialog.setTitle("Cerrar Corte");
                 dialog.setHeaderText("Ingrese los datos para cerrar el corte");
 
                 ButtonType cerrarButtonType = new ButtonType("Aceptar", ButtonBar.ButtonData.OK_DONE);
-                dialog.getDialogPane().getButtonTypes().addAll(cerrarButtonType, ButtonType.CANCEL);
+                ButtonType contarEfectivoButtonType = new ButtonType("Contar Efectivo", ButtonBar.ButtonData.LEFT);
+
+                dialog.getDialogPane().getButtonTypes().addAll(cerrarButtonType, contarEfectivoButtonType, ButtonType.CANCEL);
+
+                String boldStyle = "-fx-font-weight: bold;";
+
+                // Main layout
+                HBox mainLayout = new HBox(50);
+                mainLayout.setPadding(new Insets(10));
+
+                // Left side - fields and labels in a GridPane
+                VBox leftSide = new VBox(10);
 
                 GridPane grid = new GridPane();
                 grid.setHgap(10);
                 grid.setVgap(10);
-                grid.setPadding(new Insets(20, 150, 10, 10));
 
+                Label totalVentasLabel = new Label("Total:");
+                totalVentasLabel.setStyle(boldStyle);
                 TextField totalVentasField = new TextField(String.format("%.2f", totalVentas));
                 totalVentasField.setEditable(false);
+                totalVentasField.setStyle(boldStyle);
+
+                TextField ventasEfectivoField = new TextField(String.format("%.2f", ventasEfectivo));
+                ventasEfectivoField.setEditable(false);
+
+                TextField ventasTarjetaField = new TextField(String.format("%.2f", ventasTarjeta));
+                ventasTarjetaField.setEditable(false);
+
+                Label totalCajaLabel = new Label("Total:");
+                totalCajaLabel.setStyle(boldStyle);
+                TextField totalCajaField = new TextField();
+                totalCajaField.setEditable(false);
+                totalCajaField.setStyle(boldStyle);
+
+                Label diferenciaLabel = new Label("Diferencia:");
+                diferenciaLabel.setStyle(boldStyle);
+                TextField diferenciaField = new TextField();
+                diferenciaField.setEditable(false);
+                diferenciaField.setStyle(boldStyle);
 
                 TextField fondoAperturaField = new TextField(String.format("%.2f", lastOpenCorte.getFondoApertura()));
                 fondoAperturaField.setEditable(false);
@@ -434,123 +531,105 @@ public class ControllerCortes {
                 TextField totalEfectivoField = new TextField();
                 totalEfectivoField.setEditable(false);
 
-
                 TextField totalTarjetaField = new TextField();
-
-
-                TextField totalCajaField = new TextField();
-                totalCajaField.setEditable(false);
 
                 TextField totalEsperadoField = new TextField();
                 totalEsperadoField.setEditable(false);
 
+                // Add components to the grid
+                int row = 0;
+                grid.add(new Label("+ Ventas Efectivo:"), 0, row);
+                grid.add(ventasEfectivoField, 1, row++);
 
-                TextField diferenciaField = new TextField();
-                diferenciaField.setEditable(false);
+                grid.add(new Label("+ Ventas Tarjeta:"), 0, row);
+                grid.add(ventasTarjetaField, 1, row++);
 
+                grid.add(totalVentasLabel, 0, row);
+                grid.add(totalVentasField, 1, row++);
 
-                dialog.getDialogPane().setContent(grid);
-                grid.add(new Label("Diferencia:"), 3, 3);
-                grid.add(diferenciaField, 4, 3);
+                grid.add(new Separator(), 0, row++, 2, 1);
 
+                grid.add(new Label("+ Total Efectivo:"), 0, row);
+                grid.add(totalEfectivoField, 1, row++);
 
-                totalEfectivoField.textProperty().addListener((observable, oldValue, newValue) -> updateTotalCaja(totalEfectivoField, totalTarjetaField, totalCajaField, totalEsperadoField, diferenciaField, fondoAperturaField));
+                grid.add(new Label("+ Total Terminal:"), 0, row);
+                grid.add(totalTarjetaField, 1, row++);
 
-                totalTarjetaField.textProperty().addListener((observable, oldValue, newValue) -> updateTotalCaja(totalEfectivoField, totalTarjetaField, totalCajaField, totalEsperadoField, diferenciaField, fondoAperturaField));
+                grid.add(new Label("- Fondo Apertura:"), 0, row);
+                grid.add(fondoAperturaField, 1, row++);
 
-                totalCajaField.textProperty().addListener((observable, oldValue, newValue) -> updateDiferencia(totalCajaField, totalEsperadoField, diferenciaField));
+                grid.add(totalCajaLabel, 0, row);
+                grid.add(totalCajaField, 1, row++);
 
-                totalEsperadoField.textProperty().addListener((observable, oldValue, newValue) -> updateDiferencia(totalCajaField, totalEsperadoField, diferenciaField));
+                grid.add(new Separator(), 0, row++, 2, 1);
 
-                // Money counting grid
-                GridPane moneyGrid = new GridPane();
-                moneyGrid.setHgap(10);
-                moneyGrid.setVgap(5);
-                moneyGrid.setPadding(new Insets(10));
+                grid.add(diferenciaLabel, 0, row);
+                grid.add(diferenciaField, 1, row);
 
-                String[] denominations = {"1000", "500", "200", "100", "50", "20", "10", "5", "2", "1", "0.5"};
-                TextField[] quantityFields = new TextField[denominations.length];
-                TextField[] totalFields = new TextField[denominations.length];
+                leftSide.getChildren().add(grid);
 
-                moneyGrid.add(new Label("Cantidad"), 0, 0);
-                moneyGrid.add(new Label("Denominación"), 1, 0);
-                moneyGrid.add(new Label("Total"), 2, 0);
+                // Right side - tables
+                VBox rightSide = new VBox(10);
+                rightSide.setPrefWidth(250);
 
-                for (int i = 0; i < denominations.length; i++) {
-                    quantityFields[i] = new TextField();
-                    quantityFields[i].setPrefWidth(60);
-                    Label denominationLabel = new Label(denominations[i]);
-                    totalFields[i] = new TextField();
-                    totalFields[i].setEditable(false);
-                    totalFields[i].setPrefWidth(80);
+                // Create sales tables
+                TableView<DatabaseManager.Venta> ventasEfectivoTable = createVentasTableCloseCorte();
+                TableView<DatabaseManager.Venta> ventasTarjetaTable = createVentasTableCloseCorte();
 
-                    moneyGrid.add(quantityFields[i], 0, i + 1);
-                    moneyGrid.add(denominationLabel, 1, i + 1);
-                    moneyGrid.add(totalFields[i], 2, i + 1);
+                // Filter ventas
+                List<DatabaseManager.Venta> ventasEfectivoList = ventasSinCorte.stream()
+                        .filter(v -> "Efectivo".equals(v.getMetodoPago()))
+                        .collect(Collectors.toList());
 
-                    int index = i;
-                    quantityFields[i].textProperty().addListener((observable, oldValue, newValue) -> {
-                        try {
-                            int quantity = Integer.parseInt(newValue);
-                            double denomination = Double.parseDouble(denominations[index]);
-                            double total = quantity * denomination;
-                            totalFields[index].setText(String.format("%.2f", total));
-                            updateTotalEfectivo(totalEfectivoField, totalFields);
-                        } catch (NumberFormatException e) {
-                            totalFields[index].setText("0.00");
-                            updateTotalEfectivo(totalEfectivoField, totalFields);
-                        }
-                    });
-                }
+                List<DatabaseManager.Venta> ventasTarjetaList = ventasSinCorte.stream()
+                        .filter(v -> "Tarjeta".equals(v.getMetodoPago()))
+                        .collect(Collectors.toList());
 
-                grid.add(moneyGrid, 0, 0, 2, 1);
-                grid.add(new Label("+ Efectivo:"), 0, 1);
-                grid.add(totalEfectivoField, 1, 1);
+                ventasEfectivoTable.setItems(FXCollections.observableArrayList(ventasEfectivoList));
+                ventasTarjetaTable.setItems(FXCollections.observableArrayList(ventasTarjetaList));
 
-                grid.add(new Label("- Fondo Apertura:"), 0, 2);
-                grid.add(fondoAperturaField, 1, 2);
+                // Create labels for totals
+                Label efectivoLabel = new Label("Ventas en Efectivo - Total: $" + String.format("%.2f", ventasEfectivo));
+                Label tarjetaLabel = new Label("Ventas con Tarjeta - Total: $" + String.format("%.2f", ventasTarjeta));
 
-                grid.add(new Label("+ Tarjeta:"), 0, 3);
-                grid.add(totalTarjetaField, 1, 3);
+                // Add tables and labels to the right side
+                rightSide.getChildren().addAll(
+                        efectivoLabel, ventasEfectivoTable,
+                        tarjetaLabel, ventasTarjetaTable
+                );
 
-                grid.add(new Label("Total:"), 0, 4);
-                grid.add(totalCajaField, 1, 4);
+                // Add both sides to the main layout
+                mainLayout.getChildren().addAll(leftSide, rightSide);
 
-                TableView<DatabaseManager.Venta> ventasTable = new TableView<>();
-                ventasTable.setItems(FXCollections.observableArrayList(ventasSinCorte));
+                // Use a ScrollPane to allow scrolling if the content is too large
+                ScrollPane scrollPane = new ScrollPane(mainLayout);
+                scrollPane.setFitToWidth(true);
+                scrollPane.setFitToHeight(true);
 
-                TableColumn<DatabaseManager.Venta, Integer> claveColumn = new TableColumn<>("Clave");
-                claveColumn.setCellValueFactory(new PropertyValueFactory<>("claveVenta"));
+                dialog.getDialogPane().setContent(scrollPane);
 
-                TableColumn<DatabaseManager.Venta, LocalDateTime> fechaColumn = new TableColumn<>("Fecha");
-                fechaColumn.setCellValueFactory(new PropertyValueFactory<>("fechaVenta"));
+                totalEfectivoField.textProperty().addListener((observable, oldValue, newValue) ->
+                        updateTotalCaja(totalEfectivoField, totalTarjetaField, totalCajaField, totalEsperadoField, diferenciaField, fondoAperturaField));
 
-                TableColumn<DatabaseManager.Venta, Double> totalColumn = new TableColumn<>("Total");
-                totalColumn.setCellValueFactory(new PropertyValueFactory<>("total"));
+                totalTarjetaField.textProperty().addListener((observable, oldValue, newValue) ->
+                        updateTotalCaja(totalEfectivoField, totalTarjetaField, totalCajaField, totalEsperadoField, diferenciaField, fondoAperturaField));
 
-                ventasTable.getColumns().addAll(claveColumn, fechaColumn, totalColumn);
-                ventasTable.setMaxHeight(350);
+                totalCajaField.textProperty().addListener((observable, oldValue, newValue) ->
+                        updateDiferencia(totalCajaField, totalEsperadoField, diferenciaField));
 
-                grid.add(ventasTable, 3, 0, 2, 1);
+                totalEsperadoField.textProperty().addListener((observable, oldValue, newValue) ->
+                        updateDiferencia(totalCajaField, totalEsperadoField, diferenciaField));
 
-                grid.add(new Label("Ventas:"), 3, 1);
-                grid.add(totalVentasField, 4, 1);
-
-                double ventas = 0.0;
-
-                if (!totalVentasField.getText().isEmpty()) {
-                    ventas = Double.parseDouble(totalVentasField.getText());
-                }
-
-                double fondoApertura = 0.0;
-
-                if (!fondoAperturaField.getText().isEmpty()) {
-                    fondoApertura = Double.parseDouble(fondoAperturaField.getText());
-                }
-
+                double ventas = Double.parseDouble(totalVentasField.getText());
+                double fondoApertura = Double.parseDouble(fondoAperturaField.getText());
                 double totalEsperado = ventas;
                 totalEsperadoField.setText(String.format("%.2f", totalEsperado));
 
+                Button contarEfectivoButton = (Button) dialog.getDialogPane().lookupButton(contarEfectivoButtonType);
+                contarEfectivoButton.addEventFilter(ActionEvent.ACTION, e -> {
+                    e.consume(); // prevent dialog from closing
+                    showContarEfectivoDialog(totalEfectivoField);
+                });
 
                 dialog.setResultConverter(dialogButton -> {
                     if (dialogButton == cerrarButtonType) {
@@ -562,10 +641,11 @@ public class ControllerCortes {
                             lastOpenCorte.setTotalTarjeta(totalTarjetaField.getText().isEmpty() ? 0.0 : Double.parseDouble(totalTarjetaField.getText()));
                             lastOpenCorte.setTotalCaja(Double.parseDouble(totalCajaField.getText()));
 
+                            lastOpenCorte.setVentasEfectivo(Double.parseDouble(ventasEfectivoField.getText()));
+                            lastOpenCorte.setVentasTarjeta(Double.parseDouble(ventasTarjetaField.getText()));
                             lastOpenCorte.setVentas(totalVentas);
                             lastOpenCorte.setDiferencia(Double.parseDouble(diferenciaField.getText()));
 
-                            // Establecer la primera y última venta
                             if (!ventasSinCorte.isEmpty()) {
                                 lastOpenCorte.setReciboInicial(ventasSinCorte.get(0).getClaveVenta());
                                 lastOpenCorte.setReciboFinal(ventasSinCorte.get(ventasSinCorte.size() - 1).getClaveVenta());
@@ -579,9 +659,9 @@ public class ControllerCortes {
                     }
                     return null;
                 });
+
                 Optional<DatabaseManager.Corte> result = dialog.showAndWait();
                 result.ifPresent(updatedCorte -> {
-
                     DatabaseManager.CorteDAO.updateCorte(updatedCorte);
                     DatabaseManager.VentaDAO.asignarCorteAVentas(updatedCorte.getClave(), ventasSinCorte);
                     initialize();
@@ -592,6 +672,135 @@ public class ControllerCortes {
         }
     }
 
+    private void showContarEfectivoDialog(TextField totalEfectivoField) {
+        Dialog<Void> dialog = new Dialog<>();
+        dialog.setTitle("Contar Efectivo");
+        dialog.setHeaderText("Ingrese la cantidad de billetes y monedas");
+
+        GridPane grid = new GridPane();
+        grid.setHgap(10);
+        grid.setVgap(5);
+        grid.setPadding(new Insets(20, 150, 10, 10));
+
+        String[] denominations = {"1000", "500", "200", "100", "50", "20", "10", "5", "2", "1", "0.5"};
+        TextField[] quantityFields = new TextField[denominations.length];
+        TextField[] totalFields = new TextField[denominations.length];
+
+        // Center the header labels
+        Label cantidadLabel = new Label("Cantidad");
+        Label denominacionLabel = new Label("Denominación");
+        Label totalLabel = new Label("Total");
+
+        cantidadLabel.setAlignment(Pos.CENTER);
+        denominacionLabel.setAlignment(Pos.CENTER);
+        totalLabel.setAlignment(Pos.CENTER);
+
+        grid.add(cantidadLabel, 0, 0);
+        grid.add(denominacionLabel, 1, 0);
+        grid.add(totalLabel, 2, 0);
+
+        GridPane.setHalignment(cantidadLabel, HPos.CENTER);
+        GridPane.setHalignment(denominacionLabel, HPos.CENTER);
+        GridPane.setHalignment(totalLabel, HPos.CENTER);
+
+        // Add a total field at the bottom
+        TextField totalField = new TextField();
+        totalField.setEditable(false);
+        totalField.setPrefWidth(100);
+
+        grid.add(new Separator(), 0, denominations.length + 1, 3, 1);
+
+        Label totalEfectivoLabel = new Label("Total Efectivo:");
+        grid.add(totalEfectivoLabel, 0, denominations.length + 2);
+        grid.add(totalField, 1, denominations.length + 2, 2, 1);
+        GridPane.setHalignment(totalEfectivoLabel, HPos.RIGHT);
+
+        for (int i = 0; i < denominations.length; i++) {
+            quantityFields[i] = new TextField();
+            quantityFields[i].setPrefWidth(60);
+            Label denominationLabel = new Label(denominations[i]);
+            totalFields[i] = new TextField();
+            totalFields[i].setEditable(false);
+            totalFields[i].setPrefWidth(80);
+
+            grid.add(quantityFields[i], 0, i + 1);
+            grid.add(denominationLabel, 1, i + 1);
+            grid.add(totalFields[i], 2, i + 1);
+
+            // Center the denomination labels
+            GridPane.setHalignment(denominationLabel, HPos.CENTER);
+
+            int index = i;
+            quantityFields[i].textProperty().addListener((observable, oldValue, newValue) -> {
+                try {
+                    int quantity = Integer.parseInt(newValue);
+                    double denomination = Double.parseDouble(denominations[index]);
+                    double total = quantity * denomination;
+                    totalFields[index].setText(String.format("%.2f", total));
+                    updateTotalEfectivo(totalField, totalFields);
+                } catch (NumberFormatException e) {
+                    totalFields[index].setText("0.00");
+                    updateTotalEfectivo(totalField, totalFields);
+                }
+            });
+        }
+
+        dialog.getDialogPane().setContent(grid);
+        dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
+
+        dialog.setResultConverter(dialogButton -> {
+            if (dialogButton == ButtonType.OK) {
+                totalEfectivoField.setText(totalField.getText());
+            }
+            return null;
+        });
+
+        dialog.showAndWait();
+    }
+
+
+    private TableView<DatabaseManager.Venta> createVentasTableCloseCorte() {
+        TableView<DatabaseManager.Venta> table = new TableView<>();
+        table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+
+        TableColumn<DatabaseManager.Venta, Integer> claveColumn = new TableColumn<>("Clave");
+        claveColumn.setCellValueFactory(new PropertyValueFactory<>("claveVenta"));
+
+        TableColumn<DatabaseManager.Venta, LocalDateTime> fechaColumn = new TableColumn<>("Fecha");
+        fechaColumn.setCellValueFactory(new PropertyValueFactory<>("fechaVenta"));
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
+        fechaColumn.setCellFactory(column -> new TableCell<DatabaseManager.Venta, LocalDateTime>() {
+            @Override
+            protected void updateItem(LocalDateTime item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setText(null);
+                } else {
+                    setText(formatter.format(item));
+                }
+            }
+        });
+
+        TableColumn<DatabaseManager.Venta, Double> totalColumn = new TableColumn<>("Total");
+        totalColumn.setCellValueFactory(new PropertyValueFactory<>("total"));
+        totalColumn.setCellFactory(column -> new TableCell<DatabaseManager.Venta, Double>() {
+            @Override
+            protected void updateItem(Double item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setText(null);
+                } else {
+                    setText(String.format("$%.2f", item));
+                }
+            }
+        });
+
+        table.getColumns().addAll(claveColumn, fechaColumn, totalColumn);
+        table.setPrefHeight(200);
+
+        return table;
+    }
+
     private void updateDiferencia(TextField totalCajaField, TextField totalEsperadoField, TextField diferenciaField) {
         double totalCaja = totalCajaField.getText().isEmpty() ? 0 : Double.parseDouble(totalCajaField.getText());
         double totalEsperado = totalEsperadoField.getText().isEmpty() ? 0 : Double.parseDouble(totalEsperadoField.getText());
@@ -599,17 +808,22 @@ public class ControllerCortes {
         diferenciaField.setText(String.format("%.2f", diferencia));
     }
 
-    private void updateTotalCaja(TextField totalEfectivoField, TextField totalTarjetaField, TextField totalCajaField, TextField totalEsperadoField, TextField diferenciaField, TextField fondoAperturaField) {
+
+    private void updateTotalCaja(TextField totalEfectivoField, TextField totalTarjetaField, TextField
+            totalCajaField, TextField totalEsperadoField, TextField diferenciaField, TextField fondoAperturaField) {
+
+
         double efectivo = totalEfectivoField.getText().isEmpty() ? 0 : Double.parseDouble(totalEfectivoField.getText());
         double tarjeta = totalTarjetaField.getText().isEmpty() ? 0 : Double.parseDouble(totalTarjetaField.getText());
         double fondoApertura = fondoAperturaField.getText().isEmpty() ? 0 : Double.parseDouble(fondoAperturaField.getText());
+
         double total = efectivo + tarjeta - fondoApertura;
+
         totalCajaField.setText(String.format("%.2f", total));
         updateDiferencia(totalCajaField, totalEsperadoField, diferenciaField);
-
     }
 
-    private void updateTotalEfectivo(TextField totalEfectivoField, TextField[] totalFields) {
+    private void updateTotalEfectivo(TextField totalField, TextField[] totalFields) {
         double sum = 0;
         for (TextField field : totalFields) {
             try {
@@ -618,8 +832,26 @@ public class ControllerCortes {
                 // Ignore parsing errors
             }
         }
-        totalEfectivoField.setText(String.format("%.2f", sum));
+        totalField.setText(String.format("%.2f", sum));
     }
+
+    private void showWarningAlert(String title, String header, String content) {
+        Platform.runLater(() -> {
+            Alert alert = new Alert(Alert.AlertType.WARNING);
+            alert.setTitle(title);
+            alert.setHeaderText(header);
+            alert.setContentText(content);
+            alert.showAndWait();
+        });
+    }
+
+    private void showErrorAlert(String message) {
+        Alert alert = new Alert(Alert.AlertType.ERROR);
+        alert.setTitle("Error");
+        alert.setHeaderText(message);
+        alert.showAndWait();
+    }
+
 
     @FXML
     protected void onConsultaVentasButtonClick(ActionEvent event) throws IOException {

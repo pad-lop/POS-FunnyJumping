@@ -31,6 +31,8 @@ public class DatabaseManager {
             "recibo_final INTEGER, " +
             "fondo_apertura REAL NOT NULL, " +
             "ventas REAL, " +
+            "ventas_tarjeta REAL, " +
+            "ventas_efectivo REAL, " +
             "total_efectivo REAL, " +
             "total_caja REAL, " +
             "total_tarjeta REAL, " +
@@ -315,6 +317,16 @@ public class DatabaseManager {
             this.nombreEncargado = nombreEncargado;
         }
 
+           public Venta(int claveVenta, LocalDateTime fechaVenta, double total, int clave_corte, int claveEncargado, String nombreEncargado, String metodoPago) {
+            this.claveVenta = claveVenta;
+            this.fechaVenta = fechaVenta;
+            this.total = total;
+            this.clave_corte = clave_corte;
+            this.claveEncargado = claveEncargado;
+            this.nombreEncargado = nombreEncargado;
+            this.metodoPago = metodoPago;
+        }
+
         public int getClaveEncargado() {
             return claveEncargado;
         }
@@ -484,6 +496,41 @@ public class DatabaseManager {
 
         private static final String UPDATE_VENTA_CORTE = "UPDATE ventas SET clave_corte = ? WHERE clave_venta = ?";
         private static final String SELECT_VENTAS_BY_CORTE = "SELECT * FROM ventas WHERE clave_corte = ?";
+        private static final String SELECT_TOTAL_VENTAS_EFECTIVO_SIN_CORTE =
+                "SELECT SUM(total) FROM ventas WHERE clave_corte IS NULL AND metodo_pago = 'Efectivo'";
+
+        private static final String SELECT_TOTAL_VENTAS_TARJETA_SIN_CORTE =
+                "SELECT SUM(total) FROM ventas WHERE clave_corte IS NULL AND metodo_pago = 'Tarjeta'";
+
+        public static double getTotalVentasEfectivoSinCorte() {
+            try (Connection conn = getConnection();
+                 PreparedStatement pstmt = conn.prepareStatement(SELECT_TOTAL_VENTAS_EFECTIVO_SIN_CORTE);
+                 ResultSet rs = pstmt.executeQuery()) {
+
+                if (rs.next()) {
+                    return rs.getDouble(1);
+                }
+            } catch (SQLException e) {
+                logger.error("Error getting total ventas efectivo sin corte", e);
+                throw new DatabaseException("Error getting total ventas efectivo sin corte", e);
+            }
+            return 0.0;
+        }
+
+        public static double getTotalVentasTarjetaSinCorte() {
+            try (Connection conn = getConnection();
+                 PreparedStatement pstmt = conn.prepareStatement(SELECT_TOTAL_VENTAS_TARJETA_SIN_CORTE);
+                 ResultSet rs = pstmt.executeQuery()) {
+
+                if (rs.next()) {
+                    return rs.getDouble(1);
+                }
+            } catch (SQLException e) {
+                logger.error("Error getting total ventas tarjeta sin corte", e);
+                throw new DatabaseException("Error getting total ventas tarjeta sin corte", e);
+            }
+            return 0.0;
+        }
 
         public static void insertVentaWithPartidas(Venta venta, List<PartidaVenta> partidas) {
             try (Connection conn = getConnection()) {
@@ -579,7 +626,7 @@ public class DatabaseManager {
         }
 
         public static List<Venta> getVentasSinCorte() {
-            return queryForList(SELECT_VENTAS_SIN_CORTE, rs -> new Venta(rs.getInt("clave_venta"), rs.getTimestamp("fecha_venta").toLocalDateTime(), rs.getDouble("total"), rs.getInt("clave_corte"), rs.getInt("clave_encargado"), rs.getString("nombre_encargado")));
+            return queryForList(SELECT_VENTAS_SIN_CORTE, rs -> new Venta(rs.getInt("clave_venta"), rs.getTimestamp("fecha_venta").toLocalDateTime(), rs.getDouble("total"), rs.getInt("clave_corte"), rs.getInt("clave_encargado"), rs.getString("nombre_encargado"), rs.getString("metodo_pago")));
         }
 
         public static double getTotalVentasSinCorte() {
@@ -614,25 +661,25 @@ public class DatabaseManager {
         }
 
 
-  public static Optional<Venta> getById(int claveVenta) {
-    String SELECT_VENTA_BY_ID = "SELECT * FROM ventas WHERE clave_venta = ?";
-    List<Venta> ventas = queryForList(SELECT_VENTA_BY_ID, rs -> {
-        Venta venta = new Venta(
-            rs.getInt("clave_venta"),
-            rs.getTimestamp("fecha_venta").toLocalDateTime(),
-            rs.getDouble("total"),
-            rs.getInt("clave_corte"),
-            rs.getInt("clave_encargado"),
-            rs.getString("nombre_encargado")
-        );
-        venta.setMetodoPago(rs.getString("metodo_pago"));
-        venta.setMontoPago(rs.getDouble("monto_pago"));
-        venta.setCambio(rs.getDouble("cambio"));
-        return venta;
-    }, claveVenta);
+        public static Optional<Venta> getById(int claveVenta) {
+            String SELECT_VENTA_BY_ID = "SELECT * FROM ventas WHERE clave_venta = ?";
+            List<Venta> ventas = queryForList(SELECT_VENTA_BY_ID, rs -> {
+                Venta venta = new Venta(
+                        rs.getInt("clave_venta"),
+                        rs.getTimestamp("fecha_venta").toLocalDateTime(),
+                        rs.getDouble("total"),
+                        rs.getInt("clave_corte"),
+                        rs.getInt("clave_encargado"),
+                        rs.getString("nombre_encargado")
+                );
+                venta.setMetodoPago(rs.getString("metodo_pago"));
+                venta.setMontoPago(rs.getDouble("monto_pago"));
+                venta.setCambio(rs.getDouble("cambio"));
+                return venta;
+            }, claveVenta);
 
-    return ventas.isEmpty() ? Optional.empty() : Optional.of(ventas.get(0));
-}
+            return ventas.isEmpty() ? Optional.empty() : Optional.of(ventas.get(0));
+        }
 
 
     }
@@ -768,7 +815,11 @@ public class DatabaseManager {
         private String nombreEncargado;
 
 
-        public Corte(int clave, String estado, LocalDateTime apertura, LocalDateTime cierre, int reciboInicial, int reciboFinal, double fondoApertura, double ventas, double totalEfectivo, double totalTarjeta, double totalCaja, double diferencia, int claveEncargado, String nombreEncargado) {
+        private double ventasTarjeta;
+
+        private double ventasEfectivo;  // Add this line
+
+        public Corte(int clave, String estado, LocalDateTime apertura, LocalDateTime cierre, int reciboInicial, int reciboFinal, double fondoApertura, double ventas, double ventasTarjeta, double ventasEfectivo, double totalEfectivo, double totalTarjeta, double totalCaja, double diferencia, int claveEncargado, String nombreEncargado) {
             this.clave = clave;
             this.estado = estado;
             this.apertura = apertura;
@@ -783,9 +834,26 @@ public class DatabaseManager {
             this.totalTarjeta = totalTarjeta;
             this.claveEncargado = claveEncargado;
             this.nombreEncargado = nombreEncargado;
+            this.ventasTarjeta = ventasTarjeta;
+            this.ventasEfectivo = ventasEfectivo;
         }
 
-        // Getters and setters for all fields
+        public double getVentasEfectivo() {
+            return ventasEfectivo;
+        }
+
+        public void setVentasEfectivo(double ventasEfectivo) {
+            this.ventasEfectivo = ventasEfectivo;
+        }
+
+        // Add getter and setter for ventasTarjeta
+        public double getVentasTarjeta() {
+            return ventasTarjeta;
+        }
+
+        public void setVentasTarjeta(double ventasTarjeta) {
+            this.ventasTarjeta = ventasTarjeta;
+        }
 
         public int getClave() {
             return clave;
@@ -914,6 +982,8 @@ public class DatabaseManager {
                 "recibo_inicial = ?, " +
                 "recibo_final = ?, " +
                 "ventas = ?, " +
+                "ventas_tarjeta = ?, " +
+                "ventas_efectivo = ?, " +  // Add this line
                 "total_efectivo = ?, " +
                 "total_caja = ?, " +
                 "total_tarjeta = ?, " +
@@ -983,12 +1053,14 @@ public class DatabaseManager {
                 pstmt.setInt(3, corte.getReciboInicial());
                 pstmt.setInt(4, corte.getReciboFinal());
                 pstmt.setDouble(5, corte.getVentas());
-                pstmt.setDouble(6, corte.getTotalEfectivo());
-                pstmt.setDouble(7, corte.getTotalCaja());
-                pstmt.setDouble(8, corte.getTotalTarjeta());
-                pstmt.setDouble(9, corte.getFondoApertura());
-                pstmt.setDouble(10, corte.getDiferencia());
-                pstmt.setInt(11, corte.getClave());
+                pstmt.setDouble(6, corte.getVentasTarjeta());
+                pstmt.setDouble(7, corte.getVentasEfectivo());  // Add this line
+                pstmt.setDouble(8, corte.getTotalEfectivo());
+                pstmt.setDouble(9, corte.getTotalCaja());
+                pstmt.setDouble(10, corte.getTotalTarjeta());
+                pstmt.setDouble(11, corte.getFondoApertura());
+                pstmt.setDouble(12, corte.getDiferencia());
+                pstmt.setInt(13, corte.getClave());
 
 
                 int affectedRows = pstmt.executeUpdate();
@@ -1048,17 +1120,16 @@ public class DatabaseManager {
                     rs.getInt("recibo_final"),
                     rs.getDouble("fondo_apertura"),
                     rs.getDouble("ventas"),
+                    rs.getDouble("ventas_tarjeta"),
+                    rs.getDouble("ventas_efectivo"),  // Add this line
                     rs.getDouble("total_efectivo"),
                     rs.getDouble("total_tarjeta"),
                     rs.getDouble("total_caja"),
                     rs.getDouble("diferencia"),
                     rs.getInt("clave_encargado"),
                     rs.getString("nombre_encargado")
-
-
             );
         }
-
     }
 
 

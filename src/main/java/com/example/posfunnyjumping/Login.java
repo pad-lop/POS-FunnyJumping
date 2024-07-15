@@ -3,12 +3,18 @@ package com.example.posfunnyjumping;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
+import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.util.Optional;
+import java.util.Properties;
 import java.util.function.Consumer;
 
 public class Login extends VBox {
@@ -17,12 +23,24 @@ public class Login extends VBox {
     private Label usernameLabel;
     private Label messageLabel;
     private Consumer<DatabaseManager.Usuario> onLoginSuccess;
+    private static final String SETTINGS_FILE = "settings.txt";
 
     public Login() {
         setAlignment(Pos.CENTER);
         setSpacing(10);
         setPadding(new Insets(20));
         setStyle("-fx-background-color: #f0f0f0;");
+
+        // Load and add logo
+        ImageView logoView = loadLogo();
+        if (logoView != null) {
+            getChildren().add(logoView);
+
+            // Add a spacer
+            Region spacer = new Region();
+            spacer.setPrefHeight(20); // Adjust this value to increase or decrease space
+            getChildren().add(spacer);
+        }
 
         Label titleLabel = new Label("Funny Jumping");
         titleLabel.setFont(Font.font("Arial", FontWeight.BOLD, 24));
@@ -35,7 +53,6 @@ public class Login extends VBox {
         claveTextField = new TextField();
         claveTextField.setPromptText("Clave de Usuario (ID)");
         claveTextField.setMaxWidth(250);
-
 
         pwBox = new PasswordField();
         pwBox.setPromptText("Contraseña");
@@ -61,6 +78,41 @@ public class Login extends VBox {
         loginButton.setOnAction(e -> attemptLogin());
 
         getChildren().addAll(titleLabel, usernameLabel, claveTextField, pwBox, loginButton, messageLabel);
+    }
+
+    private ImageView loadLogo() {
+        Properties settings = loadSettings();
+        String logoPath = settings.getProperty("LogoPath");
+
+        if (logoPath != null && !logoPath.isEmpty()) {
+            try {
+                Image logo = new Image(new FileInputStream(logoPath));
+                ImageView logoView = new ImageView(logo);
+
+                // Set a maximum width and height for the logo
+                double maxWidth = 350;  // Adjust as needed
+                double maxHeight = 200; // Adjust as needed
+
+                logoView.setPreserveRatio(true);
+                logoView.setFitWidth(maxWidth);
+                logoView.setFitHeight(maxHeight);
+
+                return logoView;
+            } catch (IOException e) {
+                System.out.println("Error loading logo: " + e.getMessage());
+            }
+        }
+        return null;
+    }
+
+    private static Properties loadSettings() {
+        Properties props = new Properties();
+        try (FileInputStream in = new FileInputStream(SETTINGS_FILE)) {
+            props.load(in);
+        } catch (IOException e) {
+            System.out.println("Error loading settings: " + e.getMessage());
+        }
+        return props;
     }
 
     private void lookupUser() {
@@ -97,7 +149,6 @@ public class Login extends VBox {
             messageLabel.setText("¡Inicio de sesión exitoso como administrador!");
             messageLabel.setTextFill(Color.GREEN);
             if (onLoginSuccess != null) {
-
                 // Create a temporary admin user object
                 DatabaseManager.Usuario adminUser = new DatabaseManager.Usuario(-1, "Administrador", "admin");
                 onLoginSuccess.accept(adminUser);

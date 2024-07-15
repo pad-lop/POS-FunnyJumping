@@ -317,7 +317,7 @@ public class DatabaseManager {
             this.nombreEncargado = nombreEncargado;
         }
 
-           public Venta(int claveVenta, LocalDateTime fechaVenta, double total, int clave_corte, int claveEncargado, String nombreEncargado, String metodoPago) {
+        public Venta(int claveVenta, LocalDateTime fechaVenta, double total, int clave_corte, int claveEncargado, String nombreEncargado, String metodoPago) {
             this.claveVenta = claveVenta;
             this.fechaVenta = fechaVenta;
             this.total = total;
@@ -641,7 +641,8 @@ public class DatabaseManager {
                     rs.getDouble("total"),
                     rs.getInt("clave_corte"),
                     rs.getInt("clave_encargado"),
-                    rs.getString("nombre_encargado")
+                    rs.getString("nombre_encargado"),
+                    rs.getString("metodo_pago")
 
             ), claveCorte);
         }
@@ -1021,6 +1022,11 @@ public class DatabaseManager {
                 DatabaseManager.logger.error("Error inserting corte", e);
                 throw new DatabaseManager.DatabaseException("Error inserting corte", e);
             }
+        }
+
+        public static void printCorte(Corte corte) {
+            List<Venta> ventas = VentaDAO.getVentasByCorte(corte.getClave());
+            CortePrinter.printCorte(corte, ventas);
         }
 
         public static List<Corte> getAllCortes() {

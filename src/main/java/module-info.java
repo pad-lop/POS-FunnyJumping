@@ -12,6 +12,7 @@ module com.example.posfunnyjumping {
     requires com.zaxxer.hikari;
     requires org.slf4j;
     requires org.apache.pdfbox;
+    requires java.desktop;
 
 
     opens com.example.posfunnyjumping;

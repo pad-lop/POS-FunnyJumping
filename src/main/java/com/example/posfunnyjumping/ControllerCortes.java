@@ -79,7 +79,7 @@ public class ControllerCortes {
         corteEstadoColumn.setCellValueFactory(new PropertyValueFactory<>("estado"));
 
         // Format the apertura column
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
         corteAperturaColumn.setCellValueFactory(new PropertyValueFactory<>("apertura"));
         corteAperturaColumn.setCellFactory(column -> new TableCell<DatabaseManager.Corte, LocalDateTime>() {
             @Override
@@ -195,27 +195,27 @@ public class ControllerCortes {
 
         addDetailField(grid, 0, "Clave:", String.valueOf(corte.getClave()));
         addDetailField(grid, 1, "Estado:", corte.getEstado());
-        addDetailField(grid, 2, "Apertura:", corte.getApertura().format(formatter));
-        addDetailField(grid, 3, "Cierre:", corte.getCierre() != null ? corte.getCierre().format(formatter) : "");
-        addDetailField(grid, 4, "Recibo Inicial:", String.valueOf(corte.getReciboInicial()));
-        addDetailField(grid, 5, "Recibo Final:", String.valueOf(corte.getReciboFinal()));
+        grid.add(new Separator(), 0, 2, 2, 1);
+        addDetailField(grid, 3, "Apertura:", corte.getApertura().format(formatter));
+        addDetailField(grid, 4, "Cierre:", corte.getCierre() != null ? corte.getCierre().format(formatter) : "");
+        addDetailField(grid, 5, "Recibo Inicial:", String.valueOf(corte.getReciboInicial()));
+        addDetailField(grid, 6, "Recibo Final:", String.valueOf(corte.getReciboFinal()));
 
-        grid.add(new Separator(), 0, 6, 2, 1);
+        grid.add(new Separator(), 0, 7, 2, 1);
 
-        addDetailField(grid, 7, "Ventas Efectivo:", String.format("%.2f", corte.getVentasEfectivo()), boldStyle);
-        addDetailField(grid, 8, "Ventas Tarjeta:", String.format("%.2f", corte.getVentasTarjeta()), boldStyle);
-        addDetailField(grid, 9, "Total Ventas:", String.format("%.2f", corte.getVentas()), boldStyle);
+        addDetailField(grid, 8, "+ Ventas Efectivo:", String.format("%.2f", corte.getVentasEfectivo()));
+        addDetailField(grid, 9, "+ Ventas Tarjeta:", String.format("%.2f", corte.getVentasTarjeta()));
+        addDetailField(grid, 10, "Total:", String.format("%.2f", corte.getVentas()), boldStyle);
 
-        grid.add(new Separator(), 0, 10, 2, 1);
+        grid.add(new Separator(), 0, 11, 2, 1);
 
-        addDetailField(grid, 11, "+ Total Efectivo:", String.format("%.2f", corte.getTotalEfectivo()));
-        addDetailField(grid, 12, "- Fondo Apertura:", String.format("%.2f", corte.getFondoApertura()));
-        addDetailField(grid, 13, "+ Pago con Tarjeta:", String.format("%.2f", corte.getTotalTarjeta()));
+        addDetailField(grid, 12, "+ Total Efectivo:", String.format("%.2f", corte.getTotalEfectivo()));
+        addDetailField(grid, 13, "+ Total Terminal:", String.format("%.2f", corte.getTotalTarjeta()));
+        addDetailField(grid, 14, "- Fondo Apertura:", String.format("%.2f", corte.getFondoApertura()));
+        addDetailField(grid, 15, "Total:", String.format("%.2f", corte.getTotalCaja()), boldStyle);
 
-        grid.add(new Separator(), 0, 14, 2, 1);
+        grid.add(new Separator(), 0, 16, 2, 1);
 
-        addDetailField(grid, 15, "Total Caja:", String.format("%.2f", corte.getTotalCaja()), boldStyle);
-        addDetailField(grid, 16, "Ventas:", String.format("%.2f", corte.getVentas()), boldStyle);
         addDetailField(grid, 17, "Diferencia:", String.format("%.2f", corte.getDiferencia()), boldStyle);
 
         leftSide.getChildren().add(grid);
@@ -230,6 +230,13 @@ public class ControllerCortes {
 
         // Get sales for this corte
         List<DatabaseManager.Venta> ventas = DatabaseManager.VentaDAO.getVentasByCorte(corte.getClave());
+
+        for (DatabaseManager.Venta venta : ventas) {
+            System.out.println(venta.getTotal());
+            System.out.println(venta.getMetodoPago());
+            System.out.println(venta.getClaveVenta());
+            System.out.println(venta.getFechaVenta());
+        }
 
         // Filter ventas
         List<DatabaseManager.Venta> ventasEfectivoList = ventas.stream()
@@ -284,7 +291,7 @@ public class ControllerCortes {
 
         TableColumn<DatabaseManager.Venta, LocalDateTime> fechaColumn = new TableColumn<>("Fecha");
         fechaColumn.setCellValueFactory(new PropertyValueFactory<>("fechaVenta"));
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
         fechaColumn.setCellFactory(column -> new TableCell<DatabaseManager.Venta, LocalDateTime>() {
             @Override
             protected void updateItem(LocalDateTime item, boolean empty) {
@@ -576,6 +583,7 @@ public class ControllerCortes {
                 TableView<DatabaseManager.Venta> ventasEfectivoTable = createVentasTableCloseCorte();
                 TableView<DatabaseManager.Venta> ventasTarjetaTable = createVentasTableCloseCorte();
 
+
                 // Filter ventas
                 List<DatabaseManager.Venta> ventasEfectivoList = ventasSinCorte.stream()
                         .filter(v -> "Efectivo".equals(v.getMetodoPago()))
@@ -664,6 +672,7 @@ public class ControllerCortes {
                 result.ifPresent(updatedCorte -> {
                     DatabaseManager.CorteDAO.updateCorte(updatedCorte);
                     DatabaseManager.VentaDAO.asignarCorteAVentas(updatedCorte.getClave(), ventasSinCorte);
+                    DatabaseManager.CorteDAO.printCorte(updatedCorte); // Add this line
                     initialize();
                 });
             });
@@ -768,7 +777,7 @@ public class ControllerCortes {
 
         TableColumn<DatabaseManager.Venta, LocalDateTime> fechaColumn = new TableColumn<>("Fecha");
         fechaColumn.setCellValueFactory(new PropertyValueFactory<>("fechaVenta"));
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
         fechaColumn.setCellFactory(column -> new TableCell<DatabaseManager.Venta, LocalDateTime>() {
             @Override
             protected void updateItem(LocalDateTime item, boolean empty) {

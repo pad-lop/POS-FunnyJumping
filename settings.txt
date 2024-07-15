@@ -1,0 +1,4 @@
+#POS Funny Jumping Settings
+#Mon Jul 15 10:56:22 CST 2024
+LogoPath=C\:\\Users\\Luisf\\IdeaProjects\\POS-FunnyJumping\\logo.jpeg
+Printer=Microsoft Print to PDF

@@ -5,12 +5,15 @@ import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.pdmodel.PDPageContentStream;
 import org.apache.pdfbox.pdmodel.common.PDRectangle;
 import org.apache.pdfbox.pdmodel.font.PDType1Font;
+import org.apache.pdfbox.pdmodel.graphics.image.PDImageXObject;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Properties;
+import java.io.FileInputStream;
 
 public class TicketPrinter {
 
@@ -19,18 +22,40 @@ public class TicketPrinter {
     private static final float MARGIN = 5 * POINT_TO_MM;
     private static final float FONT_SIZE = 8;
     private static final float LEADING = 1.5f * FONT_SIZE;
+    private static final String SETTINGS_FILE = "settings.txt";
 
     public static void printTicket(DatabaseManager.Venta venta, List<DatabaseManager.PartidaVenta> partidas) {
         try (PDDocument document = new PDDocument()) {
+            Properties settings = loadSettings();
+            String printerName = settings.getProperty("Printer");
+            String logoPath = settings.getProperty("LogoPath");
 
             List<String> contentLines = generateContentLines(venta, partidas);
-            float pageHeight = calculatePageHeight(contentLines);
+            float pageHeight = calculatePageHeight(contentLines) + 40 * POINT_TO_MM; // Extra space for logo
 
             PDPage page = new PDPage(new PDRectangle(PAGE_WIDTH, pageHeight));
             document.addPage(page);
 
             try (PDPageContentStream contentStream = new PDPageContentStream(document, page)) {
                 float y = pageHeight - MARGIN;
+
+                // Add logo
+                // Add logo
+                if (logoPath != null && !logoPath.isEmpty()) {
+                    PDImageXObject logo = PDImageXObject.createFromFile(logoPath, document);
+                    float logoWidth = logo.getWidth();
+                    float logoHeight = logo.getHeight();
+                    float maxWidth = 50 * POINT_TO_MM; // Reduced from 70 to 50 mm
+                    float maxHeight = 25 * POINT_TO_MM; // Reduced from 35 to 25 mm
+
+                    float scale = Math.min(maxWidth / logoWidth, maxHeight / logoHeight);
+                    float scaledWidth = logoWidth * scale;
+                    float scaledHeight = logoHeight * scale;
+
+                    float xPosition = (PAGE_WIDTH - scaledWidth) / 2; // Center horizontally
+                    contentStream.drawImage(logo, xPosition, y - scaledHeight, scaledWidth, scaledHeight);
+                    y -= (scaledHeight + MARGIN);
+                }
 
                 for (String line : contentLines) {
                     if (line.startsWith("HEADER:")) {
@@ -45,6 +70,13 @@ public class TicketPrinter {
 
             document.save("ticket.pdf");
             System.out.println("Ticket saved as ticket.pdf");
+
+            // Print the document using the specified printer
+            if (printerName != null && !printerName.isEmpty()) {
+                PrinterUtility.printPDF("ticket.pdf", printerName);
+            } else {
+                System.out.println("No printer specified in settings. PDF saved but not printed.");
+            }
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -60,6 +92,7 @@ public class TicketPrinter {
         lines.add("Fecha: " + venta.getFechaVenta().format(formatter));
         lines.add("Encargado: " + venta.getNombreEncargado());
         lines.add("Método de pago: " + venta.getMetodoPago());
+        lines.add("");
 
         // Check if there are any trampoline partidas
         boolean hasTrampolines = partidas.stream().anyMatch(DatabaseManager.PartidaVenta::isTrampolinTiempo);
@@ -141,5 +174,15 @@ public class TicketPrinter {
             return str;
         }
         return str.substring(0, maxLength - 3) + "...";
+    }
+
+    private static Properties loadSettings() {
+        Properties props = new Properties();
+        try (FileInputStream in = new FileInputStream(SETTINGS_FILE)) {
+            props.load(in);
+        } catch (IOException e) {
+            System.out.println("Error loading settings: " + e.getMessage());
+        }
+        return props;
     }
 }

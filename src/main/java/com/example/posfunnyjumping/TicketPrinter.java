@@ -7,6 +7,7 @@ import org.apache.pdfbox.pdmodel.common.PDRectangle;
 import org.apache.pdfbox.pdmodel.font.PDType1Font;
 
 import java.io.IOException;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.ArrayList;
@@ -51,31 +52,60 @@ public class TicketPrinter {
 
     private static List<String> generateContentLines(DatabaseManager.Venta venta, List<DatabaseManager.PartidaVenta> partidas) {
         List<String> lines = new ArrayList<>();
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
-
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy hh:mm:ss a");
+        DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("hh:mm");
         lines.add("HEADER:Funny Jumping");
         lines.add("");
         lines.add("Folio: " + venta.getClaveVenta());
         lines.add("Fecha: " + venta.getFechaVenta().format(formatter));
         lines.add("Encargado: " + venta.getNombreEncargado());
         lines.add("Método de pago: " + venta.getMetodoPago());
-        lines.add("");
-        lines.add("BOLD:Cant. Descripción         Precio   Subtotal");
+
+        // Check if there are any trampoline partidas
+        boolean hasTrampolines = partidas.stream().anyMatch(DatabaseManager.PartidaVenta::isTrampolinTiempo);
+
+        if (hasTrampolines) {
+            // Trampoline section
+            lines.add("");
+            lines.add("BOLD:               Trampolines");
+            lines.add("BOLD:Nombre           Inicio    Fin     Mins.");
+            lines.add("----------------------------------------");
+
+            for (DatabaseManager.PartidaVenta partida : partidas) {
+                if (partida.isTrampolinTiempo()) {
+                    LocalDateTime baseTime = venta.getFechaVenta();
+                    LocalDateTime startTime = baseTime.minusMinutes(1);
+                    LocalDateTime endTime = startTime.plusMinutes(partida.getMinutosTrampolin());
+
+                    String line = String.format("%-16s %-9s %-9s %-3d",
+                            truncateString(partida.getNombreTrampolin(), 16),
+                            startTime.format(timeFormatter),
+                            endTime.format(timeFormatter),
+                            partida.getMinutosTrampolin());
+                    lines.add(line);
+                }
+            }
+
+            lines.add("");
+        }
+
+        lines.add("BOLD:                Productos");
+        lines.add("BOLD:Cant. Descripción      Precio   Subtotal");
         lines.add("----------------------------------------");
 
-
         for (DatabaseManager.PartidaVenta partida : partidas) {
-            String line = String.format("%-5.0f %-20s $%-7.2f $%-7.2f",
+            String line = String.format("%-5.0f %-16s $%-7.2f $%-7.2f",
                     partida.getCantidad(),
-                    truncateString(partida.getDescripcion(), 20),
+                    truncateString(partida.getDescripcion(), 16),
                     partida.getPrecioUnitario(),
                     partida.getSubtotal());
             lines.add(line);
         }
+
         lines.add("----------------------------------------");
-        lines.add(String.format("BOLD:Total:                     $%.2f", venta.getTotal()));
-        lines.add(String.format("Pago:                      $%.2f", venta.getMontoPago()));
-        lines.add(String.format("Cambio:                    $%.2f", venta.getCambio()));
+        lines.add(String.format("BOLD:Total:                         $%.2f", venta.getTotal()));
+        lines.add(String.format("Pago:                          $%.2f", venta.getMontoPago()));
+        lines.add(String.format("Cambio:                        $%.2f", venta.getCambio()));
         lines.add("");
         lines.add("BOLD:¡Gracias por su compra!");
         lines.add("Vuelva pronto");

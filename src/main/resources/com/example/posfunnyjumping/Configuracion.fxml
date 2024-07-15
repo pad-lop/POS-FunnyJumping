@@ -35,6 +35,10 @@
                         <Tab fx:id="Usuarios" closable="false" text="Usuarios">
                           <fx:include source="TabUsuarios.fxml" />
                         </Tab>
+
+                            <Tab fx:id="Ajustes" closable="false" text="Ajustes">
+                          <fx:include source="TabAjustes.fxml" />
+                        </Tab>
                     </TabPane>
                 </VBox>
             </content>

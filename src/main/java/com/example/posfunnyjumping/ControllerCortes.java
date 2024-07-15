@@ -397,7 +397,6 @@ public class ControllerCortes {
 
     @FXML
     protected void onCerrarCorteButtonClick(ActionEvent event) throws IOException {
-        System.out.println("onCerrarCorteButtonClick method called");
         DatabaseManager.Corte lastOpenCorte = DatabaseManager.CorteDAO.getLastOpenCorte().orElse(null);
         if (lastOpenCorte != null) {
             List<DatabaseManager.Venta> ventasSinCorte = DatabaseManager.VentaDAO.getVentasSinCorte();

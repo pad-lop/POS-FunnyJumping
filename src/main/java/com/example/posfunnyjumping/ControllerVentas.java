@@ -16,6 +16,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.function.Consumer;
 
 public class ControllerVentas {
@@ -234,30 +235,26 @@ public class ControllerVentas {
     @FXML
     private void onImprimirTicketClick() {
         try {
-            // Get the current venta details
+            // Get the folio from the text field
             int folio = Integer.parseInt(ventaDetallesFolioTextField.getText());
-            LocalDateTime fechaVenta = LocalDateTime.parse(ventaDetallesFechaTextField.getText(),
-                    DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss"));
-            String metodoPago = ventaDetallesMetodoPagoTextField.getText();
-            int corte = Integer.parseInt(ventaDetallesCorteTextField.getText());
-            double total = Double.parseDouble(ventaDetallesTotalTextField.getText());
 
-            String encargado = ventaDetallesNombreEncargadoTextField.getText();
+            // Retrieve the venta from the database
+            Optional<DatabaseManager.Venta> optionalVenta = DatabaseManager.VentaDAO.getById(folio);
 
-            // Create a Venta object with the current details
-            DatabaseManager.Venta venta = new DatabaseManager.Venta(
-                    folio, fechaVenta, total, corte, 0, encargado
-            );
+            if (optionalVenta.isPresent()) {
+                DatabaseManager.Venta venta = optionalVenta.get();
 
-            venta.setMetodoPago(metodoPago);
+                // Retrieve the partidas for this venta from the database
+                List<DatabaseManager.PartidaVenta> partidas = DatabaseManager.VentaDAO.getPartidasByVenta(folio);
 
-            // Get the partidas from the table view
-            List<DatabaseManager.PartidaVenta> partidas = ventaDetallesTableView.getItems();
-
-            // Print the ticket
-            TicketPrinter.printTicket(venta, partidas);
-
-            showInfoAlert("Ticket impreso correctamente");
+                // Print the ticket
+                TicketPrinter.printTicket(venta, partidas);
+                showInfoAlert("Ticket impreso correctamente");
+            } else {
+                showErrorAlert("No se encontró la venta con el folio: " + folio);
+            }
+        } catch (NumberFormatException e) {
+            showErrorAlert("Folio inválido: " + ventaDetallesFolioTextField.getText());
         } catch (Exception e) {
             showErrorAlert("Error al imprimir el ticket: " + e.getMessage());
         }

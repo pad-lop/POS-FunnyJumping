@@ -29,20 +29,6 @@
                                  <Font size="14.0" />
                              </font>
                          </Button>
-                  <VBox>
-                     <children>
-                        <Label alignment="CENTER" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" text="Encargado" textAlignment="CENTER" VBox.vgrow="ALWAYS">
-                           <font>
-                              <Font name="System Bold" size="16.0" />
-                           </font>
-                        </Label>
-                        <TextField fx:id="ventaDetallesNombreEncargadoTextField" alignment="CENTER" editable="false">
-                           <font>
-                              <Font size="14.0" />
-                           </font>
-                        </TextField>
-                     </children>
-                  </VBox>
 
 
                         <VBox>
@@ -60,6 +46,20 @@
                                 </TextField>
                             </children>
                         </VBox>
+                  <VBox>
+                     <children>
+                        <Label alignment="CENTER" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" text="Encargado" textAlignment="CENTER" VBox.vgrow="ALWAYS">
+                           <font>
+                              <Font name="System Bold" size="16.0" />
+                           </font>
+                        </Label>
+                        <TextField fx:id="ventaDetallesNombreEncargadoTextField" alignment="CENTER" editable="false">
+                           <font>
+                              <Font size="14.0" />
+                           </font>
+                        </TextField>
+                     </children>
+                  </VBox>
                         <VBox>
                             <children>
                                 <Label alignment="CENTER" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" text="Fecha" textAlignment="CENTER">

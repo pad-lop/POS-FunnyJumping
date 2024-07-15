@@ -73,9 +73,9 @@ public class TicketPrinter {
             lines.add(line);
         }
         lines.add("----------------------------------------");
-        lines.add(String.format("BOLD:Total:               $%.2f", venta.getTotal()));
-        lines.add(String.format("Pago:        $%.2f", venta.getMontoPago()));
-        lines.add(String.format("Cambio:              $%.2f", venta.getCambio()));
+        lines.add(String.format("BOLD:Total:                     $%.2f", venta.getTotal()));
+        lines.add(String.format("Pago:                      $%.2f", venta.getMontoPago()));
+        lines.add(String.format("Cambio:                    $%.2f", venta.getCambio()));
         lines.add("");
         lines.add("BOLD:¡Gracias por su compra!");
         lines.add("Vuelva pronto");

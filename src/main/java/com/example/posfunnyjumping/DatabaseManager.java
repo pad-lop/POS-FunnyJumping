@@ -556,6 +556,7 @@ public class DatabaseManager {
             }
         }
 
+
         public static List<Venta> getAllVentas() {
             return queryForList(SELECT_ALL_VENTAS, rs -> {
                 Venta venta = new Venta(
@@ -599,7 +600,6 @@ public class DatabaseManager {
         }
 
         public static void asignarCorteAVentas(int claveCorte, List<Venta> ventas) {
-            System.out.println("Holi");
             try (Connection conn = getConnection(); PreparedStatement pstmt = conn.prepareStatement(UPDATE_VENTA_CORTE)) {
                 for (Venta venta : ventas) {
                     pstmt.setInt(1, claveCorte);
@@ -612,6 +612,29 @@ public class DatabaseManager {
                 throw new DatabaseException("Error asignando corte a ventas", e);
             }
         }
+
+
+  public static Optional<Venta> getById(int claveVenta) {
+    String SELECT_VENTA_BY_ID = "SELECT * FROM ventas WHERE clave_venta = ?";
+    List<Venta> ventas = queryForList(SELECT_VENTA_BY_ID, rs -> {
+        Venta venta = new Venta(
+            rs.getInt("clave_venta"),
+            rs.getTimestamp("fecha_venta").toLocalDateTime(),
+            rs.getDouble("total"),
+            rs.getInt("clave_corte"),
+            rs.getInt("clave_encargado"),
+            rs.getString("nombre_encargado")
+        );
+        venta.setMetodoPago(rs.getString("metodo_pago"));
+        venta.setMontoPago(rs.getDouble("monto_pago"));
+        venta.setCambio(rs.getDouble("cambio"));
+        return venta;
+    }, claveVenta);
+
+    return ventas.isEmpty() ? Optional.empty() : Optional.of(ventas.get(0));
+}
+
+
     }
 
 

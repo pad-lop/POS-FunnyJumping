@@ -30,7 +30,8 @@ public class ControllerVentas {
     private TableColumn<DatabaseManager.Venta, String> ventaMetodoPagoColumn;
     @FXML
     private TableColumn<DatabaseManager.Venta, Void> ventaDetallesColumn;
-
+    @FXML
+    private TableColumn<DatabaseManager.Venta, Integer> ventaNombreEncargadoColumn;
 
     @FXML
     private TableView<DatabaseManager.Venta> ventasTable;
@@ -61,6 +62,10 @@ public class ControllerVentas {
 
     @FXML
     private TextField ventaDetallesMetodoPagoTextField;
+
+    @FXML
+    private TextField ventaDetallesNombreEncargadoTextField;
+
 
     @FXML
     private void initialize() {
@@ -119,7 +124,6 @@ public class ControllerVentas {
     private void setVentasCellValueFactories() {
         ventaFolioColumn.setCellValueFactory(new PropertyValueFactory<>("claveVenta"));
 
-        // Format the date column
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
         ventaFechaColumn.setCellValueFactory(new PropertyValueFactory<>("fechaVenta"));
         ventaFechaColumn.setCellFactory(column -> new TableCell<DatabaseManager.Venta, LocalDateTime>() {
@@ -137,6 +141,7 @@ public class ControllerVentas {
         ventaTotalColumn.setCellValueFactory(new PropertyValueFactory<>("total"));
         ventaMetodoPagoColumn.setCellValueFactory(new PropertyValueFactory<>("metodoPago"));
         ventaCorteColumn.setCellValueFactory(new PropertyValueFactory<>("clave_corte"));
+        ventaNombreEncargadoColumn.setCellValueFactory(new PropertyValueFactory<>("nombreEncargado"));
     }
 
     private void setVentaButtonColumns() {
@@ -152,10 +157,7 @@ public class ControllerVentas {
 
             initializeDetallesVentaView();
 
-            // Create a DateTimeFormatter
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
-
-            // Format the date-time field
             String formattedDateTime = venta.getFechaVenta().format(formatter);
 
             ventaDetallesFolioTextField.setText(String.valueOf(venta.getClaveVenta()));
@@ -163,18 +165,15 @@ public class ControllerVentas {
             ventaDetallesTotalTextField.setText(String.format("%.2f", venta.getTotal()));
             ventaDetallesCorteTextField.setText(String.valueOf(venta.getClave_corte()));
             ventaDetallesMetodoPagoTextField.setText(String.valueOf(venta.getMetodoPago()));
+            ventaDetallesNombreEncargadoTextField.setText(String.valueOf(venta.getNombreEncargado()));
 
-            // Load the partidas for this venta
             List<DatabaseManager.PartidaVenta> partidas = DatabaseManager.VentaDAO.getPartidasByVenta(venta.getClaveVenta());
             ventaDetallesTableView.setItems(FXCollections.observableArrayList(partidas));
 
-            // Create a new stage for the details view
             Stage detailsStage = new Stage();
             detailsStage.setTitle("Detalles de Venta");
             detailsStage.setScene(new Scene(root));
             detailsStage.setResizable(true);
-
-            // Show the stage
             detailsStage.show();
 
         } catch (IOException e) {
@@ -189,11 +188,12 @@ public class ControllerVentas {
         ventaDetallesTotalTextField.setText(String.valueOf(venta.getTotal()));
         ventaDetallesCorteTextField.setText(String.valueOf(venta.getClave_corte()));
         ventaDetallesMetodoPagoTextField.setText(String.valueOf(venta.getMetodoPago()));
+        ventaDetallesNombreEncargadoTextField.setText(String.valueOf(venta.getNombreEncargado()));
 
-        // Load the partidas for this venta
         List<DatabaseManager.PartidaVenta> partidas = DatabaseManager.VentaDAO.getPartidasByVenta(venta.getClaveVenta());
         ventaDetallesTableView.setItems(FXCollections.observableArrayList(partidas));
     }
+
 
     private <T> TableCell<T, Void> createButtonCell(String buttonText, Consumer<T> action) {
         return new TableCell<>() {
@@ -242,9 +242,11 @@ public class ControllerVentas {
             int corte = Integer.parseInt(ventaDetallesCorteTextField.getText());
             double total = Double.parseDouble(ventaDetallesTotalTextField.getText());
 
+            String encargado = ventaDetallesNombreEncargadoTextField.getText();
+
             // Create a Venta object with the current details
             DatabaseManager.Venta venta = new DatabaseManager.Venta(
-                    folio, fechaVenta, total, corte
+                    folio, fechaVenta, total, corte, 0, encargado
             );
 
             venta.setMetodoPago(metodoPago);

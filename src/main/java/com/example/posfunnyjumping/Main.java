@@ -10,6 +10,7 @@ public class Main extends Application {
 
     @Override
     public void start(Stage primaryStage) {
+
         primaryStage.setTitle("Funny Jumping - Login");
 
         Login loginScreen = new Login();

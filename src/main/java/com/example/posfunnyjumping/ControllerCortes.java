@@ -330,9 +330,34 @@ public class ControllerCortes {
             grid.setPadding(new Insets(20, 150, 10, 10));
 
             TextField fondoAperturaField = new TextField();
+            TextField claveEncargadoField = new TextField();
+            Label nombreEncargadoLabel = new Label();
 
-            grid.add(new Label("Fondo de Apertura:"), 0, 1);
-            grid.add(fondoAperturaField, 1, 1);
+            grid.add(new Label("Fondo de Apertura:"), 0, 0);
+            grid.add(fondoAperturaField, 1, 0);
+            grid.add(new Label("Clave de Encargado:"), 0, 1);
+            grid.add(claveEncargadoField, 1, 1);
+            grid.add(new Label("Nombre de Encargado:"), 0, 2);
+            grid.add(nombreEncargadoLabel, 1, 2);
+
+            // Add listener to claveEncargadoField
+            claveEncargadoField.textProperty().addListener((observable, oldValue, newValue) -> {
+                if (!newValue.isEmpty()) {
+                    try {
+                        int claveEncargado = Integer.parseInt(newValue);
+                        Optional<DatabaseManager.Usuario> usuario = DatabaseManager.UsuarioDAO.getById(claveEncargado);
+                        if (usuario.isPresent()) {
+                            nombreEncargadoLabel.setText(usuario.get().getNombre());
+                        } else {
+                            nombreEncargadoLabel.setText("Usuario no encontrado");
+                        }
+                    } catch (NumberFormatException e) {
+                        nombreEncargadoLabel.setText("Clave inválida");
+                    }
+                } else {
+                    nombreEncargadoLabel.setText("");
+                }
+            });
 
             dialog.getDialogPane().setContent(grid);
 
@@ -341,7 +366,16 @@ public class ControllerCortes {
                 if (dialogButton == abrirButtonType) {
                     try {
                         double fondoApertura = Double.parseDouble(fondoAperturaField.getText());
-                        return new DatabaseManager.Corte(0, "Abierto", LocalDateTime.now(), null, 0, 0, fondoApertura, 0, 0, 0, 0, 0);
+                        int claveEncargado = Integer.parseInt(claveEncargadoField.getText());
+
+                        // Validate user
+                        Optional<DatabaseManager.Usuario> usuario = DatabaseManager.UsuarioDAO.getById(claveEncargado);
+                        if (usuario.isPresent()) {
+                            return new DatabaseManager.Corte(0, "Abierto", LocalDateTime.now(), null, 0, 0, fondoApertura, 0, 0, 0, 0, 0, claveEncargado, usuario.get().getNombre());
+                        } else {
+                            showErrorAlert("Usuario no encontrado. Por favor, ingrese una clave de encargado válida.");
+                            return null;
+                        }
                     } catch (NumberFormatException e) {
                         showErrorAlert("Datos inválidos. Por favor, ingrese números válidos.");
                         return null;

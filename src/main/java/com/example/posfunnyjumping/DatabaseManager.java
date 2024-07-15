@@ -34,7 +34,9 @@ public class DatabaseManager {
             "total_efectivo REAL, " +
             "total_caja REAL, " +
             "total_tarjeta REAL, " +
-            "diferencia REAL " +
+            "diferencia REAL, " +
+            "clave_encargado INTEGER, " +
+            "nombre_encargado TEXT" +
             ")";
     private static final String CREATE_TABLE_TEMPORIZADOR = "CREATE TABLE IF NOT EXISTS temporizador (" + "clave INTEGER PRIMARY KEY AUTOINCREMENT, " + "clave_venta INTEGER, " + "nombre TEXT NOT NULL, " + "fecha TIMESTAMP NOT NULL, " + "minutos FLOAT NOT NULL, " + "activo BOOLEAN NOT NULL DEFAULT TRUE, " + "tiempo_restante TEXT, " + "FOREIGN KEY (clave_venta) REFERENCES ventas(clave_venta))";
 
@@ -50,7 +52,11 @@ public class DatabaseManager {
             "clave_corte INTEGER, " +
             "metodo_pago TEXT, " +
             "monto_pago REAL NOT NULL DEFAULT 0, " +
-            "FOREIGN KEY (clave_corte) REFERENCES cortes(clave))";
+            "clave_encargado INTEGER, " +
+            "nombre_encargado TEXT, " +
+
+            "FOREIGN KEY (clave_corte) REFERENCES cortes(clave), " +
+            "FOREIGN KEY (clave_encargado) REFERENCES cortes(clave_encargado))";
     private static final String CREATE_TABLE_PARTIDAS_VENTAS = "CREATE TABLE IF NOT EXISTS partidas_ventas (" + "clave_partida INTEGER PRIMARY KEY AUTOINCREMENT, " + "clave_venta INTEGER NOT NULL, " + "clave_producto INTEGER, " + "descripcion TEXT, " + "isTrampolinTiempo BOOLEAN NOT NULL DEFAULT FALSE, " + "clave_tiempo INTEGER, " + "nombre_trampolin TEXT, " + "minutos_trampolin INTEGER, " + "cantidad INT NOT NULL, " + "precio_unitario REAL NOT NULL, " + "subtotal REAL NOT NULL, " + "FOREIGN KEY (clave_venta) REFERENCES ventas(clave_venta), " + "FOREIGN KEY (clave_producto) REFERENCES productos(clave), " + "FOREIGN KEY (clave_tiempo) REFERENCES tiempos(clave))";
 
 
@@ -296,12 +302,33 @@ public class DatabaseManager {
         private String metodoPago;
         private double montoPago;
         private double cambio;
+        private int claveEncargado;
 
-        public Venta(int claveVenta, LocalDateTime fechaVenta, double total, int clave_corte) {
+        private String nombreEncargado;
+
+        public Venta(int claveVenta, LocalDateTime fechaVenta, double total, int clave_corte, int claveEncargado, String nombreEncargado) {
             this.claveVenta = claveVenta;
             this.fechaVenta = fechaVenta;
             this.total = total;
             this.clave_corte = clave_corte;
+            this.claveEncargado = claveEncargado;
+            this.nombreEncargado = nombreEncargado;
+        }
+
+        public int getClaveEncargado() {
+            return claveEncargado;
+        }
+
+        public void setClaveEncargado(int claveEncargado) {
+            this.claveEncargado = claveEncargado;
+        }
+
+        public void setNombreEncargado(String nombreEncargado) {
+            this.nombreEncargado = nombreEncargado;
+        }
+
+        public String getNombreEncargado() {
+            return nombreEncargado;
         }
 
         // Add a new getter for clave_corte
@@ -445,7 +472,9 @@ public class DatabaseManager {
     }
 
     public static class VentaDAO {
-        private static final String INSERT_VENTA = "INSERT INTO ventas(fecha_venta, total, metodo_pago, monto_pago, cambio) VALUES(?,?,?,?,?)";
+        private static final String INSERT_VENTA = "INSERT INTO ventas(fecha_venta, total, metodo_pago, monto_pago, cambio, clave_encargado, nombre_encargado) VALUES(?,?,?,?,?,?,?)";
+
+
         private static final String INSERT_PARTIDA_VENTA = "INSERT INTO partidas_ventas(clave_venta, clave_producto,clave_tiempo, cantidad, precio_unitario, subtotal, descripcion, isTrampolinTiempo, nombre_trampolin, minutos_trampolin) VALUES(?,?,?,?,?,?,?,?,?,?)";
 
         private static final String SELECT_ALL_VENTAS = "SELECT * FROM ventas ORDER BY clave_venta DESC";
@@ -468,6 +497,8 @@ public class DatabaseManager {
                     ventaStmt.setString(3, venta.getMetodoPago());
                     ventaStmt.setDouble(4, venta.getMontoPago());
                     ventaStmt.setDouble(5, venta.getCambio());
+                    ventaStmt.setInt(6, venta.getClaveEncargado());
+                    ventaStmt.setString(7, venta.getNombreEncargado());
                     ventaStmt.executeUpdate();
 
                     // Get the generated venta ID
@@ -531,7 +562,9 @@ public class DatabaseManager {
                         rs.getInt("clave_venta"),
                         rs.getTimestamp("fecha_venta").toLocalDateTime(),
                         rs.getDouble("total"),
-                        rs.getInt("clave_corte")
+                        rs.getInt("clave_corte"),
+                        rs.getInt("clave_encargado"),
+                        rs.getString("nombre_encargado")
                 );
                 venta.setMetodoPago(rs.getString("metodo_pago"));
                 venta.setMontoPago(rs.getDouble("monto_pago"));
@@ -545,7 +578,7 @@ public class DatabaseManager {
         }
 
         public static List<Venta> getVentasSinCorte() {
-            return queryForList(SELECT_VENTAS_SIN_CORTE, rs -> new Venta(rs.getInt("clave_venta"), rs.getTimestamp("fecha_venta").toLocalDateTime(), rs.getDouble("total"), rs.getInt("clave_corte")));
+            return queryForList(SELECT_VENTAS_SIN_CORTE, rs -> new Venta(rs.getInt("clave_venta"), rs.getTimestamp("fecha_venta").toLocalDateTime(), rs.getDouble("total"), rs.getInt("clave_corte"), rs.getInt("clave_encargado"), rs.getString("nombre_encargado")));
         }
 
         public static double getTotalVentasSinCorte() {
@@ -558,7 +591,10 @@ public class DatabaseManager {
                     rs.getInt("clave_venta"),
                     rs.getTimestamp("fecha_venta").toLocalDateTime(),
                     rs.getDouble("total"),
-                    rs.getInt("clave_corte")
+                    rs.getInt("clave_corte"),
+                    rs.getInt("clave_encargado"),
+                    rs.getString("nombre_encargado")
+
             ), claveCorte);
         }
 
@@ -705,8 +741,11 @@ public class DatabaseManager {
         private double totalCaja;
         private double diferencia;
 
+        private int claveEncargado;
+        private String nombreEncargado;
 
-        public Corte(int clave, String estado, LocalDateTime apertura, LocalDateTime cierre, int reciboInicial, int reciboFinal, double fondoApertura, double ventas, double totalEfectivo, double totalTarjeta, double totalCaja, double diferencia) {
+
+        public Corte(int clave, String estado, LocalDateTime apertura, LocalDateTime cierre, int reciboInicial, int reciboFinal, double fondoApertura, double ventas, double totalEfectivo, double totalTarjeta, double totalCaja, double diferencia, int claveEncargado, String nombreEncargado) {
             this.clave = clave;
             this.estado = estado;
             this.apertura = apertura;
@@ -719,6 +758,8 @@ public class DatabaseManager {
             this.totalCaja = totalCaja;
             this.diferencia = diferencia;
             this.totalTarjeta = totalTarjeta;
+            this.claveEncargado = claveEncargado;
+            this.nombreEncargado = nombreEncargado;
         }
 
         // Getters and setters for all fields
@@ -820,14 +861,30 @@ public class DatabaseManager {
             this.diferencia = diferencia;
         }
 
+        // Add getters and setters for new fields
+        public int getClaveEncargado() {
+            return claveEncargado;
+        }
+
+        public void setClaveEncargado(int claveEncargado) {
+            this.claveEncargado = claveEncargado;
+        }
+
+        public String getNombreEncargado() {
+            return nombreEncargado;
+        }
+
+        public void setNombreEncargado(String nombreEncargado) {
+            this.nombreEncargado = nombreEncargado;
+        }
+
     }
 
     public class CorteDAO {
 
         private static final String SELECT_ALL_CORTES = "SELECT * FROM cortes ORDER BY apertura DESC";
 
-        private static final String INSERT_CORTE = "INSERT INTO cortes (estado, apertura, fondo_apertura) VALUES (?, ?, ?)";
-
+        private static final String INSERT_CORTE = "INSERT INTO cortes (estado, apertura, fondo_apertura, clave_encargado, nombre_encargado) VALUES (?, ?, ?, ?, ?)";
         private static final String UPDATE_CORTE = "UPDATE cortes SET " +
                 "estado = ?, " +
                 "cierre = ?, " +
@@ -858,6 +915,8 @@ public class DatabaseManager {
                 pstmt.setString(1, corte.getEstado());
                 pstmt.setTimestamp(2, Timestamp.valueOf(corte.getApertura()));
                 pstmt.setDouble(3, corte.getFondoApertura());
+                pstmt.setInt(4, corte.getClaveEncargado());
+                pstmt.setString(5, corte.getNombreEncargado());
                 pstmt.executeUpdate();
 
                 try (ResultSet generatedKeys = pstmt.getGeneratedKeys()) {
@@ -969,7 +1028,11 @@ public class DatabaseManager {
                     rs.getDouble("total_efectivo"),
                     rs.getDouble("total_tarjeta"),
                     rs.getDouble("total_caja"),
-                    rs.getDouble("diferencia")
+                    rs.getDouble("diferencia"),
+                    rs.getInt("clave_encargado"),
+                    rs.getString("nombre_encargado")
+
+
             );
         }
 

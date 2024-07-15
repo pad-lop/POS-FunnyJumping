@@ -57,10 +57,12 @@ public class TicketPrinter {
         lines.add("");
         lines.add("Folio: " + venta.getClaveVenta());
         lines.add("Fecha: " + venta.getFechaVenta().format(formatter));
+        lines.add("Encargado: " + venta.getNombreEncargado());
         lines.add("Método de pago: " + venta.getMetodoPago());
         lines.add("");
         lines.add("BOLD:Cant. Descripción         Precio   Subtotal");
-        lines.add("────────────────────────────────────────");
+        lines.add("----------------------------------------");
+
 
         for (DatabaseManager.PartidaVenta partida : partidas) {
             String line = String.format("%-5.0f %-20s $%-7.2f $%-7.2f",
@@ -70,9 +72,9 @@ public class TicketPrinter {
                     partida.getSubtotal());
             lines.add(line);
         }
-        lines.add("────────────────────────────────────────");
+        lines.add("----------------------------------------");
         lines.add(String.format("BOLD:Total:               $%.2f", venta.getTotal()));
-        lines.add(String.format("Monto pagado:        $%.2f", venta.getMontoPago()));
+        lines.add(String.format("Pago:        $%.2f", venta.getMontoPago()));
         lines.add(String.format("Cambio:              $%.2f", venta.getCambio()));
         lines.add("");
         lines.add("BOLD:¡Gracias por su compra!");

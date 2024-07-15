@@ -398,6 +398,15 @@ public class ControllerRegistrarVenta {
             showNoOpenCorteDialog();
             return;
         }
+
+        // Get the last open corte
+        Optional<DatabaseManager.Corte> lastOpenCorte = DatabaseManager.CorteDAO.getLastOpenCorte();
+        if (!lastOpenCorte.isPresent()) {
+            showAlert("No hay un corte abierto. No se puede procesar la venta.");
+            return;
+        }
+
+
         if (ordenItems.isEmpty()) {
             showAlert("No hay items en la orden para procesar.");
             return;
@@ -414,10 +423,11 @@ public class ControllerRegistrarVenta {
         }
 
         // Create venta object
-        DatabaseManager.Venta newVenta = new DatabaseManager.Venta(0, LocalDateTime.now(), total, 0);
+        DatabaseManager.Venta newVenta = new DatabaseManager.Venta(0, LocalDateTime.now(), total, 0, lastOpenCorte.get().getClaveEncargado(), lastOpenCorte.get().getNombreEncargado());
         newVenta.setMetodoPago((String) paymentInfo.get("metodoPago"));
         newVenta.setMontoPago((Double) paymentInfo.get("montoPago"));
         newVenta.setCambio((Double) paymentInfo.get("cambio"));
+
 
         // Create partidas list
         List<DatabaseManager.PartidaVenta> partidas = new ArrayList<>();

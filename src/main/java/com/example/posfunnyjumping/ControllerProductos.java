@@ -74,28 +74,22 @@ public class ControllerProductos {
         grid.setVgap(10);
         grid.setPadding(new Insets(20, 150, 10, 10));
 
-        TextField claveField = new TextField(String.valueOf(producto.getClave()));
-        claveField.setEditable(false);
+        Label claveLabel = new Label(String.valueOf(producto.getClave()));
         TextField descripcionField = new TextField(producto.getDescripcion());
         descripcionField.setId("descripcionField");
         TextField precioField = new TextField(String.valueOf(producto.getPrecio()));
         precioField.setId("precioField");
-        TextField existenciaField = new TextField(String.valueOf(producto.getExistencia()));
-        existenciaField.setId("existenciaField");
 
         grid.add(new Label("Clave:"), 0, 0);
-        grid.add(claveField, 1, 0);
+        grid.add(claveLabel, 1, 0);
         grid.add(new Label("Descripción:"), 0, 1);
         grid.add(descripcionField, 1, 1);
         grid.add(new Label("Precio:"), 0, 2);
         grid.add(precioField, 1, 2);
-        grid.add(new Label("Existencia:"), 0, 3);
-        grid.add(existenciaField, 1, 3);
 
         // Add tooltips for accessibility
         descripcionField.setTooltip(new Tooltip("Ingrese la descripción del producto"));
         precioField.setTooltip(new Tooltip("Ingrese el precio del producto"));
-        existenciaField.setTooltip(new Tooltip("Ingrese la cantidad en existencia del producto"));
 
         return grid;
     }
@@ -143,7 +137,6 @@ public class ControllerProductos {
     private DatabaseManager.Producto createProductFromInput(GridPane grid, int clave) {
         TextField descripcionField = (TextField) grid.lookup("#descripcionField");
         TextField precioField = (TextField) grid.lookup("#precioField");
-        TextField existenciaField = (TextField) grid.lookup("#existenciaField");
 
         String descripcion = descripcionField.getText();
         if (descripcion.isEmpty()) {
@@ -158,15 +151,8 @@ public class ControllerProductos {
             throw new IllegalArgumentException("El precio debe ser un número positivo.");
         }
 
-        double existencia;
-        try {
-            existencia = Double.parseDouble(existenciaField.getText());
-            if (existencia < 0) throw new IllegalArgumentException();
-        } catch (NumberFormatException e) {
-            throw new IllegalArgumentException("La existencia debe ser un número positivo.");
-        }
-
-        return new DatabaseManager.Producto(clave, descripcion, precio, existencia);
+        // Set existencia to 0 when creating a new product
+        return new DatabaseManager.Producto(clave, descripcion, precio, 0);
     }
 
     private <T> TableCell<T, Void> createButtonCell(String buttonText, Consumer<T> action) {

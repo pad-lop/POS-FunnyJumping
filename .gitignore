@@ -3,6 +3,14 @@ target/
 !**/src/main/**/target/
 !**/src/test/**/target/
 
+
+corte.pdf
+compra.pdf
+ticket.pdf
+funnyJumping.db
+settings.txt
+logo.jpeg
+
 ### IntelliJ IDEA ###
 .idea/modules.xml
 .idea/jarRepositories.xml

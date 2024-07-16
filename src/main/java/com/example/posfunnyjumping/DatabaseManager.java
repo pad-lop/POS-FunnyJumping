@@ -524,6 +524,23 @@ public class DatabaseManager {
             return 0.0;
         }
 
+        public static List<PartidaVenta> getPartidasByProducto(int claveProducto) {
+            String query = "SELECT * FROM partidas_ventas WHERE clave_producto = ?";
+            return queryForList(query, rs -> new PartidaVenta(
+                    rs.getInt("clave_partida"),
+                    rs.getInt("clave_venta"),
+                    rs.getInt("clave_producto"),
+                    rs.getInt("cantidad"),
+                    rs.getDouble("precio_unitario"),
+                    rs.getDouble("subtotal"),
+                    rs.getString("descripcion"),
+                    rs.getInt("clave_tiempo"),
+                    rs.getBoolean("isTrampolinTiempo"),
+                    rs.getString("nombre_trampolin"),
+                    rs.getInt("minutos_trampolin")
+            ), claveProducto);
+        }
+
         public static void insertVentaWithPartidas(Venta venta, List<PartidaVenta> partidas) {
             int retries = 3;
             while (retries > 0) {
@@ -1222,7 +1239,6 @@ public class DatabaseManager {
         }
 
 
-
         public int getClave_corte() {
             return clave_corte;
         }
@@ -1348,6 +1364,17 @@ public class DatabaseManager {
                     throw new DatabaseException("Error creating compra with partidas", e);
                 }
             }
+        }
+
+        public static List<PartidaCompra> getPartidasByProducto(int claveProducto) {
+            String query = "SELECT * FROM partidas_compras WHERE clave_producto = ?";
+            return queryForList(query, rs -> new PartidaCompra(
+                    rs.getInt("clave_partida"),
+                    rs.getInt("clave_compra"),
+                    rs.getInt("clave_producto"),
+                    rs.getString("descripcion"),
+                    rs.getDouble("cantidad")
+            ), claveProducto);
         }
 
         private static void updateStockInTransaction(Connection conn, int claveProducto, double cantidad) throws SQLException {

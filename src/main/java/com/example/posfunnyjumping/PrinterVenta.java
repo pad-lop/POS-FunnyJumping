@@ -100,7 +100,6 @@ public class PrinterVenta {
 
         if (hasTrampolines) {
             // Trampoline section
-            lines.add("");
             lines.add("BOLD:               Trampolines");
             lines.add("BOLD:Nombre           Inicio    Fin     Mins.");
             lines.add("----------------------------------------");

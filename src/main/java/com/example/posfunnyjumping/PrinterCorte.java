@@ -68,6 +68,8 @@ public class PrinterCorte {
                 }
             }
 
+                  document.save("corte.pdf");
+            System.out.println("Corte saved as corte.pdf");
 
             // Print the document using the specified printer
             if (printerName != null && !printerName.isEmpty()) {

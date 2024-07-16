@@ -15,7 +15,7 @@ import java.util.ArrayList;
 import java.util.Properties;
 import java.io.FileInputStream;
 
-public class TicketPrinter {
+public class PrinterVenta {
 
     private static final float POINT_TO_MM = 2.83465f;
     private static final float PAGE_WIDTH = 80 * POINT_TO_MM;
@@ -86,6 +86,7 @@ public class TicketPrinter {
         List<String> lines = new ArrayList<>();
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy hh:mm:ss a");
         DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("hh:mm");
+        lines.add("");
         lines.add("HEADER:Funny Jumping");
         lines.add("");
         lines.add("Folio: " + venta.getClaveVenta());

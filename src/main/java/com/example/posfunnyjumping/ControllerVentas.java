@@ -248,7 +248,7 @@ public class ControllerVentas {
                 List<DatabaseManager.PartidaVenta> partidas = DatabaseManager.VentaDAO.getPartidasByVenta(folio);
 
                 // Print the ticket
-                TicketPrinter.printTicket(venta, partidas);
+                PrinterVenta.printTicket(venta, partidas);
                 showInfoAlert("Ticket impreso correctamente");
             } else {
                 showErrorAlert("No se encontró la venta con el folio: " + folio);

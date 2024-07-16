@@ -16,49 +16,34 @@ public class DatabaseManager {
     private static final Logger logger = LoggerFactory.getLogger(DatabaseManager.class);
     private static final String DB_URL = "jdbc:sqlite:funnyJumping.db";
     private static HikariDataSource dataSource;
-
-
-    private static final String CREATE_TABLE_USUARIOS = "CREATE TABLE IF NOT EXISTS usuarios (" +
+    private static final String CREATE_TABLE_COMPRAS = "CREATE TABLE IF NOT EXISTS compras (" +
             "clave INTEGER PRIMARY KEY AUTOINCREMENT, " +
-            "nombre TEXT NOT NULL, " +
-            "contrasena TEXT NOT NULL)";
-    private static final String CREATE_TABLE_CORTES = "CREATE TABLE IF NOT EXISTS cortes (" +
-            "clave INTEGER PRIMARY KEY AUTOINCREMENT, " +
-            "estado TEXT NOT NULL, " +
-            "apertura TIMESTAMP NOT NULL, " +
-            "cierre TIMESTAMP, " +
-            "recibo_inicial INTEGER, " +
-            "recibo_final INTEGER, " +
-            "fondo_apertura REAL NOT NULL, " +
-            "ventas REAL, " +
-            "ventas_tarjeta REAL, " +
-            "ventas_efectivo REAL, " +
-            "total_efectivo REAL, " +
-            "total_caja REAL, " +
-            "total_tarjeta REAL, " +
-            "diferencia REAL, " +
+            "fecha TIMESTAMP NOT NULL, " +
+            "clave_corte INTEGER, " +
             "clave_encargado INTEGER, " +
-            "nombre_encargado TEXT" +
+            "nombre_encargado TEXT, " +
+            "FOREIGN KEY (clave_corte) REFERENCES cortes(clave)" +
             ")";
+    private static final String CREATE_TABLE_PARTIDAS_COMPRAS = "CREATE TABLE IF NOT EXISTS partidas_compras (" +
+            "clave_partida INTEGER PRIMARY KEY AUTOINCREMENT, " +
+            "clave_compra INTEGER NOT NULL, " +
+            "clave_producto INTEGER NOT NULL, " +
+            "descripcion TEXT NOT NULL, " +
+            "cantidad REAL NOT NULL, " +
+            "FOREIGN KEY (clave_compra) REFERENCES compras(clave), " +
+            "FOREIGN KEY (clave_producto) REFERENCES productos(clave)" +
+            ")";
+    private static final String CREATE_TABLE_USUARIOS = "CREATE TABLE IF NOT EXISTS usuarios (" + "clave INTEGER PRIMARY KEY AUTOINCREMENT, " + "nombre TEXT NOT NULL, " + "contrasena TEXT NOT NULL)";
+    private static final String CREATE_TABLE_CORTES = "CREATE TABLE IF NOT EXISTS cortes (" + "clave INTEGER PRIMARY KEY AUTOINCREMENT, " + "estado TEXT NOT NULL, " + "apertura TIMESTAMP NOT NULL, " + "cierre TIMESTAMP, " + "recibo_inicial INTEGER, " + "recibo_final INTEGER, " + "fondo_apertura REAL NOT NULL, " + "ventas REAL, " + "ventas_tarjeta REAL, " + "ventas_efectivo REAL, " + "total_efectivo REAL, " + "total_caja REAL, " + "total_tarjeta REAL, " + "diferencia REAL, " + "clave_encargado INTEGER, " + "nombre_encargado TEXT" + ")";
     private static final String CREATE_TABLE_TEMPORIZADOR = "CREATE TABLE IF NOT EXISTS temporizador (" + "clave INTEGER PRIMARY KEY AUTOINCREMENT, " + "clave_venta INTEGER, " + "nombre TEXT NOT NULL, " + "fecha TIMESTAMP NOT NULL, " + "minutos FLOAT NOT NULL, " + "activo BOOLEAN NOT NULL DEFAULT TRUE, " + "tiempo_restante TEXT, " + "FOREIGN KEY (clave_venta) REFERENCES ventas(clave_venta))";
 
     private static final String CREATE_TABLE_PRODUCTOS = "CREATE TABLE IF NOT EXISTS productos (" + "clave INTEGER PRIMARY KEY AUTOINCREMENT, " + "descripcion TEXT NOT NULL, " + "precio REAL NOT NULL DEFAULT 0, " + "existencia REAL NOT NULL DEFAULT 0)";
 
     private static final String CREATE_TABLE_TIEMPOS = "CREATE TABLE IF NOT EXISTS tiempos (" + "clave INTEGER PRIMARY KEY AUTOINCREMENT, " + "minutos REAL NOT NULL, " + "precio REAL NOT NULL DEFAULT 0)";
 
-    private static final String CREATE_TABLE_VENTAS = "CREATE TABLE IF NOT EXISTS ventas (" +
-            "clave_venta INTEGER PRIMARY KEY AUTOINCREMENT, " +
-            "fecha_venta TIMESTAMP NOT NULL, " +
-            "total REAL NOT NULL DEFAULT 0, " +
-            "cambio REAL NOT NULL DEFAULT 0, " +
-            "clave_corte INTEGER, " +
-            "metodo_pago TEXT, " +
-            "monto_pago REAL NOT NULL DEFAULT 0, " +
-            "clave_encargado INTEGER, " +
-            "nombre_encargado TEXT, " +
+    private static final String CREATE_TABLE_VENTAS = "CREATE TABLE IF NOT EXISTS ventas (" + "clave_venta INTEGER PRIMARY KEY AUTOINCREMENT, " + "fecha_venta TIMESTAMP NOT NULL, " + "total REAL NOT NULL DEFAULT 0, " + "cambio REAL NOT NULL DEFAULT 0, " + "clave_corte INTEGER, " + "metodo_pago TEXT, " + "monto_pago REAL NOT NULL DEFAULT 0, " + "clave_encargado INTEGER, " + "nombre_encargado TEXT, " +
 
-            "FOREIGN KEY (clave_corte) REFERENCES cortes(clave), " +
-            "FOREIGN KEY (clave_encargado) REFERENCES cortes(clave_encargado))";
+            "FOREIGN KEY (clave_corte) REFERENCES cortes(clave), " + "FOREIGN KEY (clave_encargado) REFERENCES cortes(clave_encargado))";
     private static final String CREATE_TABLE_PARTIDAS_VENTAS = "CREATE TABLE IF NOT EXISTS partidas_ventas (" + "clave_partida INTEGER PRIMARY KEY AUTOINCREMENT, " + "clave_venta INTEGER NOT NULL, " + "clave_producto INTEGER, " + "descripcion TEXT, " + "isTrampolinTiempo BOOLEAN NOT NULL DEFAULT FALSE, " + "clave_tiempo INTEGER, " + "nombre_trampolin TEXT, " + "minutos_trampolin INTEGER, " + "cantidad INT NOT NULL, " + "precio_unitario REAL NOT NULL, " + "subtotal REAL NOT NULL, " + "FOREIGN KEY (clave_venta) REFERENCES ventas(clave_venta), " + "FOREIGN KEY (clave_producto) REFERENCES productos(clave), " + "FOREIGN KEY (clave_tiempo) REFERENCES tiempos(clave))";
 
 
@@ -92,7 +77,7 @@ public class DatabaseManager {
     private static void createTables() throws SQLException {
 
 
-        String[] createTableSQL = {CREATE_TABLE_TEMPORIZADOR, CREATE_TABLE_PRODUCTOS, CREATE_TABLE_TIEMPOS, CREATE_TABLE_VENTAS, CREATE_TABLE_PARTIDAS_VENTAS, CREATE_TABLE_CORTES, CREATE_TABLE_USUARIOS};
+        String[] createTableSQL = {CREATE_TABLE_PARTIDAS_COMPRAS, CREATE_TABLE_COMPRAS, CREATE_TABLE_TEMPORIZADOR, CREATE_TABLE_PRODUCTOS, CREATE_TABLE_TIEMPOS, CREATE_TABLE_VENTAS, CREATE_TABLE_PARTIDAS_VENTAS, CREATE_TABLE_CORTES, CREATE_TABLE_USUARIOS};
 
         try (Connection conn = getConnection(); Statement stmt = conn.createStatement()) {
             for (String sql : createTableSQL) {
@@ -176,6 +161,19 @@ public class DatabaseManager {
         private static final String DELETE_PRODUCTO = "DELETE FROM productos WHERE clave = ?";
         private static final String SELECT_ALL_PRODUCTOS = "SELECT * FROM productos";
         private static final String SELECT_PRODUCTO_BY_ID = "SELECT * FROM productos WHERE clave = ?";
+
+        private static final String UPDATE_STOCK = "UPDATE productos SET existencia = existencia + ? WHERE clave = ?";
+
+        public static void updateStock(int claveProducto, double cantidad) {
+            try (Connection conn = getConnection(); PreparedStatement pstmt = conn.prepareStatement(UPDATE_STOCK)) {
+                pstmt.setDouble(1, cantidad);
+                pstmt.setInt(2, claveProducto);
+                pstmt.executeUpdate();
+            } catch (SQLException e) {
+                logger.error("Error updating product stock", e);
+                throw new DatabaseException("Error updating product stock", e);
+            }
+        }
 
         public static void insert(Producto producto) {
             try (Connection conn = getConnection(); PreparedStatement pstmt = conn.prepareStatement(INSERT_PRODUCTO)) {
@@ -496,16 +494,12 @@ public class DatabaseManager {
 
         private static final String UPDATE_VENTA_CORTE = "UPDATE ventas SET clave_corte = ? WHERE clave_venta = ?";
         private static final String SELECT_VENTAS_BY_CORTE = "SELECT * FROM ventas WHERE clave_corte = ?";
-        private static final String SELECT_TOTAL_VENTAS_EFECTIVO_SIN_CORTE =
-                "SELECT SUM(total) FROM ventas WHERE clave_corte IS NULL AND metodo_pago = 'Efectivo'";
+        private static final String SELECT_TOTAL_VENTAS_EFECTIVO_SIN_CORTE = "SELECT SUM(total) FROM ventas WHERE clave_corte IS NULL AND metodo_pago = 'Efectivo'";
 
-        private static final String SELECT_TOTAL_VENTAS_TARJETA_SIN_CORTE =
-                "SELECT SUM(total) FROM ventas WHERE clave_corte IS NULL AND metodo_pago = 'Tarjeta'";
+        private static final String SELECT_TOTAL_VENTAS_TARJETA_SIN_CORTE = "SELECT SUM(total) FROM ventas WHERE clave_corte IS NULL AND metodo_pago = 'Tarjeta'";
 
         public static double getTotalVentasEfectivoSinCorte() {
-            try (Connection conn = getConnection();
-                 PreparedStatement pstmt = conn.prepareStatement(SELECT_TOTAL_VENTAS_EFECTIVO_SIN_CORTE);
-                 ResultSet rs = pstmt.executeQuery()) {
+            try (Connection conn = getConnection(); PreparedStatement pstmt = conn.prepareStatement(SELECT_TOTAL_VENTAS_EFECTIVO_SIN_CORTE); ResultSet rs = pstmt.executeQuery()) {
 
                 if (rs.next()) {
                     return rs.getDouble(1);
@@ -518,9 +512,7 @@ public class DatabaseManager {
         }
 
         public static double getTotalVentasTarjetaSinCorte() {
-            try (Connection conn = getConnection();
-                 PreparedStatement pstmt = conn.prepareStatement(SELECT_TOTAL_VENTAS_TARJETA_SIN_CORTE);
-                 ResultSet rs = pstmt.executeQuery()) {
+            try (Connection conn = getConnection(); PreparedStatement pstmt = conn.prepareStatement(SELECT_TOTAL_VENTAS_TARJETA_SIN_CORTE); ResultSet rs = pstmt.executeQuery()) {
 
                 if (rs.next()) {
                     return rs.getDouble(1);
@@ -533,87 +525,112 @@ public class DatabaseManager {
         }
 
         public static void insertVentaWithPartidas(Venta venta, List<PartidaVenta> partidas) {
-            try (Connection conn = getConnection()) {
-                conn.setAutoCommit(false);
-                try (PreparedStatement ventaStmt = conn.prepareStatement(INSERT_VENTA, Statement.RETURN_GENERATED_KEYS);
-                     PreparedStatement partidaStmt = conn.prepareStatement(INSERT_PARTIDA_VENTA)) {
+            int retries = 3;
+            while (retries > 0) {
+                try (Connection conn = getConnection()) {
+                    conn.setAutoCommit(false);
+                    try {
+                        // Set busy timeout
+                        try (Statement stmt = conn.createStatement()) {
+                            stmt.execute("PRAGMA busy_timeout = 30000;"); // 30 seconds
+                        }
 
-                    // Insert venta
-                    ventaStmt.setTimestamp(1, Timestamp.valueOf(venta.getFechaVenta()));
-                    ventaStmt.setDouble(2, venta.getTotal());
-                    ventaStmt.setString(3, venta.getMetodoPago());
-                    ventaStmt.setDouble(4, venta.getMontoPago());
-                    ventaStmt.setDouble(5, venta.getCambio());
-                    ventaStmt.setInt(6, venta.getClaveEncargado());
-                    ventaStmt.setString(7, venta.getNombreEncargado());
-                    ventaStmt.executeUpdate();
+                        // Insert venta
+                        try (PreparedStatement ventaStmt = conn.prepareStatement(INSERT_VENTA, Statement.RETURN_GENERATED_KEYS)) {
+                            ventaStmt.setTimestamp(1, Timestamp.valueOf(venta.getFechaVenta()));
+                            ventaStmt.setDouble(2, venta.getTotal());
+                            ventaStmt.setString(3, venta.getMetodoPago());
+                            ventaStmt.setDouble(4, venta.getMontoPago());
+                            ventaStmt.setDouble(5, venta.getCambio());
+                            ventaStmt.setInt(6, venta.getClaveEncargado());
+                            ventaStmt.setString(7, venta.getNombreEncargado());
+                            ventaStmt.executeUpdate();
 
-                    // Get the generated venta ID
-                    try (ResultSet generatedKeys = ventaStmt.getGeneratedKeys()) {
-                        if (generatedKeys.next()) {
-                            int ventaId = generatedKeys.getInt(1);
-                            venta.setClaveVenta(ventaId); // Assuming you have a setter for claveVenta in Venta class
+                            try (ResultSet generatedKeys = ventaStmt.getGeneratedKeys()) {
+                                if (generatedKeys.next()) {
+                                    int ventaId = generatedKeys.getInt(1);
+                                    venta.setClaveVenta(ventaId);
 
-                            // Create a list to store Temporizador objects
-                            List<TemporizadorDAO.Temporizador> temporizadores = new ArrayList<>();
+                                    // Insert partidas
+                                    try (PreparedStatement partidaStmt = conn.prepareStatement(INSERT_PARTIDA_VENTA)) {
+                                        for (PartidaVenta partida : partidas) {
+                                            partidaStmt.setInt(1, ventaId);
+                                            partidaStmt.setInt(2, partida.getClaveProducto());
+                                            partidaStmt.setInt(3, partida.getClaveTiempo());
+                                            partidaStmt.setDouble(4, partida.getCantidad());
+                                            partidaStmt.setDouble(5, partida.getPrecioUnitario());
+                                            partidaStmt.setDouble(6, partida.getSubtotal());
+                                            partidaStmt.setString(7, partida.getDescripcion());
+                                            partidaStmt.setBoolean(8, partida.isTrampolinTiempo());
+                                            partidaStmt.setString(9, partida.getNombreTrampolin());
+                                            partidaStmt.setInt(10, partida.getMinutosTrampolin());
+                                            partidaStmt.addBatch();
 
-                            // Insert partidas
-                            for (PartidaVenta partida : partidas) {
-                                partidaStmt.setInt(1, ventaId);
-                                partidaStmt.setInt(2, partida.getClaveProducto());
-                                partidaStmt.setInt(3, partida.getClaveTiempo());
-                                partidaStmt.setDouble(4, partida.getCantidad());
-                                partidaStmt.setDouble(5, partida.getPrecioUnitario());
-                                partidaStmt.setDouble(6, partida.getSubtotal());
-                                partidaStmt.setString(7, partida.getDescripcion());
-                                partidaStmt.setBoolean(8, partida.isTrampolinTiempo());
-                                partidaStmt.setString(9, partida.getNombreTrampolin());
-                                partidaStmt.setInt(10, partida.getMinutosTrampolin());
-                                partidaStmt.addBatch();
+                                            if (!partida.isTrampolinTiempo()) {
+                                                updateStockInTransaction(conn, partida.getClaveProducto(), -partida.getCantidad());
+                                            }
+                                        }
+                                        partidaStmt.executeBatch();
+                                    }
 
-                                if (partida.isTrampolinTiempo()) {
-                                    TemporizadorDAO.Temporizador temporizador = new TemporizadorDAO.Temporizador(partida.getClavePartida(), ventaId, partida.getNombreTrampolin(), venta.getFechaVenta(), partida.getMinutosTrampolin(), true, "");
-                                    temporizadores.add(temporizador);
+                                    // Insert temporizadores if needed
+                                    for (PartidaVenta partida : partidas) {
+                                        if (partida.isTrampolinTiempo()) {
+                                            TemporizadorDAO.Temporizador temporizador = new TemporizadorDAO.Temporizador(0, ventaId, partida.getNombreTrampolin(), venta.getFechaVenta(), partida.getMinutosTrampolin(), true, "");
+                                            insertTemporizadorInTransaction(conn, temporizador);
+                                        }
+                                    }
                                 }
                             }
-                            partidaStmt.executeBatch();
-                            conn.commit();
+                        }
 
-                            // Now insert all temporizadores
-                            for (TemporizadorDAO.Temporizador temporizador : temporizadores) {
-                                TemporizadorDAO.insert(temporizador);
-                            }
-
-                            // Print the ticket
-                            javafx.application.Platform.runLater(() -> {
-                                TicketPrinter.printTicket(venta, partidas);
-                            });
+                        conn.commit();
+                        // Print the ticket
+                        javafx.application.Platform.runLater(() -> {
+                            PrinterVenta.printTicket(venta, partidas);
+                        });
+                        return; // Success, exit the method
+                    } catch (SQLException e) {
+                        conn.rollback();
+                        if (e.getMessage().contains("database is locked") && retries > 1) {
+                            retries--;
+                            Thread.sleep(1000); // Wait for 1 second before retrying
+                        } else {
+                            throw e; // Rethrow if it's not a lock error or we're out of retries
                         }
                     }
-                } catch (SQLException e) {
-                    conn.rollback();
-                    logger.error("Error during transaction, rollback performed", e);
+                } catch (SQLException | InterruptedException e) {
+                    logger.error("Error creating venta with partidas", e);
                     throw new DatabaseException("Error creating venta with partidas", e);
-                } finally {
-                    conn.setAutoCommit(true);
                 }
-            } catch (SQLException e) {
-                logger.error("Error creating venta with partidas", e);
-                throw new DatabaseException("Error creating venta with partidas", e);
             }
         }
 
+        private static void updateStockInTransaction(Connection conn, int claveProducto, double cantidad) throws SQLException {
+            String UPDATE_STOCK = "UPDATE productos SET existencia = existencia + ? WHERE clave = ?";
+            try (PreparedStatement pstmt = conn.prepareStatement(UPDATE_STOCK)) {
+                pstmt.setDouble(1, cantidad);
+                pstmt.setInt(2, claveProducto);
+                pstmt.executeUpdate();
+            }
+        }
+
+        private static void insertTemporizadorInTransaction(Connection conn, TemporizadorDAO.Temporizador temporizador) throws SQLException {
+            String INSERT_TEMPORIZADOR = "INSERT INTO temporizador (clave_venta, nombre, fecha, minutos, activo, tiempo_restante) VALUES (?, ?, ?, ?, ?, ?)";
+            try (PreparedStatement pstmt = conn.prepareStatement(INSERT_TEMPORIZADOR)) {
+                pstmt.setInt(1, temporizador.getClaveVenta());
+                pstmt.setString(2, temporizador.getNombre());
+                pstmt.setTimestamp(3, Timestamp.valueOf(temporizador.getFecha()));
+                pstmt.setFloat(4, temporizador.getMinutos());
+                pstmt.setBoolean(5, temporizador.isActivo());
+                pstmt.setString(6, temporizador.getTiempoRestante());
+                pstmt.executeUpdate();
+            }
+        }
 
         public static List<Venta> getAllVentas() {
             return queryForList(SELECT_ALL_VENTAS, rs -> {
-                Venta venta = new Venta(
-                        rs.getInt("clave_venta"),
-                        rs.getTimestamp("fecha_venta").toLocalDateTime(),
-                        rs.getDouble("total"),
-                        rs.getInt("clave_corte"),
-                        rs.getInt("clave_encargado"),
-                        rs.getString("nombre_encargado")
-                );
+                Venta venta = new Venta(rs.getInt("clave_venta"), rs.getTimestamp("fecha_venta").toLocalDateTime(), rs.getDouble("total"), rs.getInt("clave_corte"), rs.getInt("clave_encargado"), rs.getString("nombre_encargado"));
                 venta.setMetodoPago(rs.getString("metodo_pago"));
                 venta.setMontoPago(rs.getDouble("monto_pago"));
                 venta.setCambio(rs.getDouble("cambio"));
@@ -635,14 +652,7 @@ public class DatabaseManager {
         }
 
         public static List<Venta> getVentasByCorte(int claveCorte) {
-            return queryForList(SELECT_VENTAS_BY_CORTE, rs -> new Venta(
-                    rs.getInt("clave_venta"),
-                    rs.getTimestamp("fecha_venta").toLocalDateTime(),
-                    rs.getDouble("total"),
-                    rs.getInt("clave_corte"),
-                    rs.getInt("clave_encargado"),
-                    rs.getString("nombre_encargado"),
-                    rs.getString("metodo_pago")
+            return queryForList(SELECT_VENTAS_BY_CORTE, rs -> new Venta(rs.getInt("clave_venta"), rs.getTimestamp("fecha_venta").toLocalDateTime(), rs.getDouble("total"), rs.getInt("clave_corte"), rs.getInt("clave_encargado"), rs.getString("nombre_encargado"), rs.getString("metodo_pago")
 
             ), claveCorte);
         }
@@ -665,14 +675,7 @@ public class DatabaseManager {
         public static Optional<Venta> getById(int claveVenta) {
             String SELECT_VENTA_BY_ID = "SELECT * FROM ventas WHERE clave_venta = ?";
             List<Venta> ventas = queryForList(SELECT_VENTA_BY_ID, rs -> {
-                Venta venta = new Venta(
-                        rs.getInt("clave_venta"),
-                        rs.getTimestamp("fecha_venta").toLocalDateTime(),
-                        rs.getDouble("total"),
-                        rs.getInt("clave_corte"),
-                        rs.getInt("clave_encargado"),
-                        rs.getString("nombre_encargado")
-                );
+                Venta venta = new Venta(rs.getInt("clave_venta"), rs.getTimestamp("fecha_venta").toLocalDateTime(), rs.getDouble("total"), rs.getInt("clave_corte"), rs.getInt("clave_encargado"), rs.getString("nombre_encargado"));
                 venta.setMetodoPago(rs.getString("metodo_pago"));
                 venta.setMontoPago(rs.getDouble("monto_pago"));
                 venta.setCambio(rs.getDouble("cambio"));
@@ -686,7 +689,7 @@ public class DatabaseManager {
     }
 
 
-    public class TemporizadorDAO {
+    public static class TemporizadorDAO {
         private static final String INSERT_TEMPORIZADOR = "INSERT INTO temporizador (clave_venta, nombre, fecha, minutos, activo, tiempo_restante) VALUES (?, ?, ?, ?, ?, ?)";
         private static final String STOP_TEMPORIZADOR = "UPDATE temporizador SET activo = FALSE, tiempo_restante = ? WHERE clave = ?";
         private static final String SELECT_ALL_TEMPORIZADORES = "SELECT * FROM temporizador ORDER BY clave DESC";
@@ -694,8 +697,7 @@ public class DatabaseManager {
         private static final String DELETE_ALL_TEMPORIZADORES = "DELETE FROM temporizador";
 
         public static void deleteAllTemporizadores() {
-            try (Connection conn = DatabaseManager.getConnection();
-                 PreparedStatement pstmt = conn.prepareStatement(DELETE_ALL_TEMPORIZADORES)) {
+            try (Connection conn = DatabaseManager.getConnection(); PreparedStatement pstmt = conn.prepareStatement(DELETE_ALL_TEMPORIZADORES)) {
                 pstmt.executeUpdate();
             } catch (SQLException e) {
                 DatabaseManager.logger.error("Error deleting all temporizadores", e);
@@ -972,25 +974,13 @@ public class DatabaseManager {
 
     }
 
-    public class CorteDAO {
+    public static class CorteDAO {
 
         private static final String SELECT_ALL_CORTES = "SELECT * FROM cortes ORDER BY apertura DESC";
 
         private static final String INSERT_CORTE = "INSERT INTO cortes (estado, apertura, fondo_apertura, clave_encargado, nombre_encargado) VALUES (?, ?, ?, ?, ?)";
-        private static final String UPDATE_CORTE = "UPDATE cortes SET " +
-                "estado = ?, " +
-                "cierre = ?, " +
-                "recibo_inicial = ?, " +
-                "recibo_final = ?, " +
-                "ventas = ?, " +
-                "ventas_tarjeta = ?, " +
-                "ventas_efectivo = ?, " +  // Add this line
-                "total_efectivo = ?, " +
-                "total_caja = ?, " +
-                "total_tarjeta = ?, " +
-                "fondo_apertura = ?, " +
-                "diferencia = ? " +
-                "WHERE clave = ?";
+        private static final String UPDATE_CORTE = "UPDATE cortes SET " + "estado = ?, " + "cierre = ?, " + "recibo_inicial = ?, " + "recibo_final = ?, " + "ventas = ?, " + "ventas_tarjeta = ?, " + "ventas_efectivo = ?, " +  // Add this line
+                "total_efectivo = ?, " + "total_caja = ?, " + "total_tarjeta = ?, " + "fondo_apertura = ?, " + "diferencia = ? " + "WHERE clave = ?";
         private static final String SELECT_CORTE_BY_ID = "SELECT * FROM cortes WHERE clave = ?";
 
         private static final String SELECT_LAST_OPEN_CORTE = "SELECT * FROM cortes WHERE estado = 'Abierto' ORDER BY apertura DESC LIMIT 1";
@@ -1026,7 +1016,7 @@ public class DatabaseManager {
 
         public static void printCorte(Corte corte) {
             List<Venta> ventas = VentaDAO.getVentasByCorte(corte.getClave());
-            CortePrinter.printCorte(corte, ventas);
+            PrinterCorte.printCorte(corte, ventas);
         }
 
         public static List<Corte> getAllCortes() {
@@ -1051,8 +1041,7 @@ public class DatabaseManager {
                 throw new IllegalArgumentException("Corte cannot be null");
             }
 
-            try (Connection conn = DatabaseManager.getConnection();
-                 PreparedStatement pstmt = conn.prepareStatement(UPDATE_CORTE)) {
+            try (Connection conn = DatabaseManager.getConnection(); PreparedStatement pstmt = conn.prepareStatement(UPDATE_CORTE)) {
 
                 pstmt.setString(1, corte.getEstado());
                 pstmt.setTimestamp(2, corte.getCierre() != null ? Timestamp.valueOf(corte.getCierre()) : null);
@@ -1117,24 +1106,8 @@ public class DatabaseManager {
         }
 
         private static Corte mapResultSetToCorte(ResultSet rs) throws SQLException {
-            return new Corte(
-                    rs.getInt("clave"),
-                    rs.getString("estado"),
-                    rs.getTimestamp("apertura").toLocalDateTime(),
-                    rs.getTimestamp("cierre") != null ? rs.getTimestamp("cierre").toLocalDateTime() : null,
-                    rs.getInt("recibo_inicial"),
-                    rs.getInt("recibo_final"),
-                    rs.getDouble("fondo_apertura"),
-                    rs.getDouble("ventas"),
-                    rs.getDouble("ventas_tarjeta"),
-                    rs.getDouble("ventas_efectivo"),  // Add this line
-                    rs.getDouble("total_efectivo"),
-                    rs.getDouble("total_tarjeta"),
-                    rs.getDouble("total_caja"),
-                    rs.getDouble("diferencia"),
-                    rs.getInt("clave_encargado"),
-                    rs.getString("nombre_encargado")
-            );
+            return new Corte(rs.getInt("clave"), rs.getString("estado"), rs.getTimestamp("apertura").toLocalDateTime(), rs.getTimestamp("cierre") != null ? rs.getTimestamp("cierre").toLocalDateTime() : null, rs.getInt("recibo_inicial"), rs.getInt("recibo_final"), rs.getDouble("fondo_apertura"), rs.getDouble("ventas"), rs.getDouble("ventas_tarjeta"), rs.getDouble("ventas_efectivo"),  // Add this line
+                    rs.getDouble("total_efectivo"), rs.getDouble("total_tarjeta"), rs.getDouble("total_caja"), rs.getDouble("diferencia"), rs.getInt("clave_encargado"), rs.getString("nombre_encargado"));
         }
     }
 
@@ -1212,5 +1185,292 @@ public class DatabaseManager {
             List<Usuario> usuarios = queryForList(SELECT_USUARIO_BY_ID, rs -> new Usuario(rs.getInt("clave"), rs.getString("nombre"), rs.getString("contrasena")), clave);
             return usuarios.isEmpty() ? Optional.empty() : Optional.of(usuarios.get(0));
         }
+
+
+    }
+
+
+    public static class Compra {
+        private int clave;
+        private LocalDateTime fecha;
+        private int clave_corte;
+        private int claveEncargado;
+        private String nombreEncargado;
+
+        public Compra(int clave, LocalDateTime fecha, int clave_corte, int claveEncargado, String nombreEncargado) {
+            this.clave = clave;
+            this.fecha = fecha;
+            this.clave_corte = clave_corte;
+            this.claveEncargado = claveEncargado;
+            this.nombreEncargado = nombreEncargado;
+        }
+
+        public int getClave() {
+            return clave;
+        }
+
+        public void setClave(int clave) {
+            this.clave = clave;
+        }
+
+        public LocalDateTime getFecha() {
+            return fecha;
+        }
+
+        public void setFecha(LocalDateTime fecha) {
+            this.fecha = fecha;
+        }
+
+
+
+        public int getClave_corte() {
+            return clave_corte;
+        }
+
+        public int getClaveEncargado() {
+            return claveEncargado;
+        }
+
+        public void setClaveEncargado(int claveEncargado) {
+            this.claveEncargado = claveEncargado;
+        }
+
+        public String getNombreEncargado() {
+            return nombreEncargado;
+        }
+
+        public void setNombreEncargado(String nombreEncargado) {
+            this.nombreEncargado = nombreEncargado;
+        }
+    }
+
+    public static class CompraDAO {
+        private static final String INSERT_COMPRA = "INSERT INTO compras(fecha, clave_corte, clave_encargado, nombre_encargado) VALUES(?,?,?,?)";
+        private static final String SELECT_ALL_COMPRAS = "SELECT * FROM compras ORDER BY fecha DESC";
+        private static final String SELECT_COMPRAS_BY_CORTE = "SELECT * FROM compras WHERE clave_corte = ?";
+        private static final String UPDATE_COMPRA_CORTE = "UPDATE compras SET clave_corte = ? WHERE clave = ?";
+        private static final String INSERT_PARTIDA_COMPRA = "INSERT INTO partidas_compras(clave_compra, clave_producto, descripcion, cantidad) VALUES(?,?,?,?)";
+        private static final String SELECT_PARTIDAS_BY_COMPRA = "SELECT * FROM partidas_compras WHERE clave_compra = ?";
+
+        public static List<PartidaCompra> getPartidasByCompra(int claveCompra) {
+            try (Connection conn = getConnection();
+                 PreparedStatement pstmt = conn.prepareStatement(SELECT_PARTIDAS_BY_COMPRA)) {
+                pstmt.setInt(1, claveCompra);
+                try (ResultSet rs = pstmt.executeQuery()) {
+                    List<PartidaCompra> partidas = new ArrayList<>();
+                    while (rs.next()) {
+                        partidas.add(new PartidaCompra(
+                                rs.getInt("clave_partida"),
+                                rs.getInt("clave_compra"),
+                                rs.getInt("clave_producto"),
+                                rs.getString("descripcion"),
+                                rs.getDouble("cantidad")
+                        ));
+                    }
+                    return partidas;
+                }
+            } catch (SQLException e) {
+                logger.error("Error getting partidas for compra", e);
+                throw new DatabaseException("Error getting partidas for compra", e);
+            }
+        }
+
+        public static Optional<Compra> getById(int claveCompra) {
+            String SELECT_COMPRA_BY_ID = "SELECT * FROM compras WHERE clave = ?";
+            List<Compra> compras = queryForList(SELECT_COMPRA_BY_ID, rs -> {
+
+                return new Compra(rs.getInt("clave"), rs.getTimestamp("fecha").toLocalDateTime(), rs.getInt("clave_corte"), rs.getInt("clave_encargado"), rs.getString("nombre_encargado"));
+            }, claveCompra);
+
+            return compras.isEmpty() ? Optional.empty() : Optional.of(compras.get(0));
+        }
+
+        public static void insertCompraWithPartidas(Compra compra, List<PartidaCompra> partidas) {
+            int retries = 3;
+            while (retries > 0) {
+                try (Connection conn = getConnection()) {
+                    conn.setAutoCommit(false);
+                    try {
+                        // Set busy timeout
+                        try (Statement stmt = conn.createStatement()) {
+                            stmt.execute("PRAGMA busy_timeout = 30000;"); // 30 seconds
+                        }
+
+                        // Insert compra
+                        try (PreparedStatement compraStmt = conn.prepareStatement(INSERT_COMPRA, Statement.RETURN_GENERATED_KEYS)) {
+                            compraStmt.setTimestamp(1, Timestamp.valueOf(compra.getFecha()));
+                            compraStmt.setInt(2, compra.getClave_corte());
+                            compraStmt.setInt(3, compra.getClaveEncargado());
+                            compraStmt.setString(4, compra.getNombreEncargado());
+                            compraStmt.executeUpdate();
+
+                            try (ResultSet generatedKeys = compraStmt.getGeneratedKeys()) {
+                                if (generatedKeys.next()) {
+                                    int compraId = generatedKeys.getInt(1);
+                                    compra.setClave(compraId);
+
+                                    // Insert partidas
+                                    try (PreparedStatement partidaStmt = conn.prepareStatement(INSERT_PARTIDA_COMPRA)) {
+                                        for (PartidaCompra partida : partidas) {
+                                            partidaStmt.setInt(1, compraId);
+                                            partidaStmt.setInt(2, partida.getClaveProducto());
+                                            partidaStmt.setString(3, partida.getDescripcion());
+                                            partidaStmt.setDouble(4, partida.getCantidad());
+                                            partidaStmt.addBatch();
+
+
+                                            // Update stock
+                                            updateStockInTransaction(conn, partida.getClaveProducto(), partida.getCantidad());
+                                        }
+                                        partidaStmt.executeBatch();
+                                    }
+                                }
+                            }
+                        }
+
+                        conn.commit();
+
+                        // Print the compra after successful insertion
+                        PrinterCompra.printCompra(compra, partidas);
+
+                        return; // Success, exit the method
+                    } catch (SQLException e) {
+                        conn.rollback();
+                        if (e.getMessage().contains("database is locked") && retries > 1) {
+                            retries--;
+                            Thread.sleep(1000); // Wait for 1 second before retrying
+                        } else {
+                            throw e; // Rethrow if it's not a lock error or we're out of retries
+                        }
+                    }
+                } catch (SQLException | InterruptedException e) {
+                    logger.error("Error creating compra with partidas", e);
+                    throw new DatabaseException("Error creating compra with partidas", e);
+                }
+            }
+        }
+
+        private static void updateStockInTransaction(Connection conn, int claveProducto, double cantidad) throws SQLException {
+            String UPDATE_STOCK = "UPDATE productos SET existencia = existencia + ? WHERE clave = ?";
+            try (PreparedStatement pstmt = conn.prepareStatement(UPDATE_STOCK)) {
+                pstmt.setDouble(1, cantidad);
+                pstmt.setInt(2, claveProducto);
+                pstmt.executeUpdate();
+            }
+        }
+
+        public static void insert(Compra compra) {
+            try (Connection conn = getConnection();
+                 PreparedStatement pstmt = conn.prepareStatement(INSERT_COMPRA, Statement.RETURN_GENERATED_KEYS)) {
+                pstmt.setTimestamp(1, Timestamp.valueOf(compra.getFecha()));
+                pstmt.setInt(2, compra.getClave_corte());
+                pstmt.setInt(3, compra.getClaveEncargado());
+                pstmt.setString(4, compra.getNombreEncargado());
+                pstmt.executeUpdate();
+
+                try (ResultSet generatedKeys = pstmt.getGeneratedKeys()) {
+                    if (generatedKeys.next()) {
+                        compra.setClave(generatedKeys.getInt(1));
+                    }
+                }
+            } catch (SQLException e) {
+                logger.error("Error inserting compra", e);
+                throw new DatabaseException("Error inserting compra", e);
+            }
+        }
+
+        public static List<Compra> getAllCompras() {
+            return queryForList(SELECT_ALL_COMPRAS, rs -> new Compra(
+                    rs.getInt("clave"),
+                    rs.getTimestamp("fecha").toLocalDateTime(),
+                    rs.getInt("clave_corte"),
+                    rs.getInt("clave_encargado"),
+                    rs.getString("nombre_encargado")
+            ));
+        }
+
+        public static List<Compra> getComprasByCorte(int claveCorte) {
+            return queryForList(SELECT_COMPRAS_BY_CORTE, rs -> new Compra(
+                    rs.getInt("clave"),
+                    rs.getTimestamp("fecha").toLocalDateTime(),
+                    rs.getInt("clave_corte"),
+                    rs.getInt("clave_encargado"),
+                    rs.getString("nombre_encargado")
+            ), claveCorte);
+        }
+
+
+        public static void asignarCorteACompras(int claveCorte, List<Compra> compras) {
+            try (Connection conn = getConnection(); PreparedStatement pstmt = conn.prepareStatement(UPDATE_COMPRA_CORTE)) {
+                for (Compra compra : compras) {
+                    pstmt.setInt(1, claveCorte);
+                    pstmt.setInt(2, compra.getClave());
+                    pstmt.addBatch();
+                }
+                pstmt.executeBatch();
+            } catch (SQLException e) {
+                logger.error("Error asignando corte a compras", e);
+                throw new DatabaseException("Error asignando corte a compras", e);
+            }
+        }
+    }
+
+    public static class PartidaCompra {
+        private int clavePartida;
+        private int claveCompra;
+        private int claveProducto;
+        private String descripcion;
+        private double cantidad;
+
+        public PartidaCompra(int clavePartida, int claveCompra, int claveProducto, String descripcion, double cantidad) {
+            this.clavePartida = clavePartida;
+            this.claveCompra = claveCompra;
+            this.claveProducto = claveProducto;
+            this.descripcion = descripcion;
+            this.cantidad = cantidad;
+        }
+
+
+        public String getDescripcion() {
+            return descripcion;
+        }
+
+        public void setDescripcion(String descripcion) {
+            this.descripcion = descripcion;
+        }
+
+        public int getClavePartida() {
+            return clavePartida;
+        }
+
+        public int getClaveCompra() {
+            return claveCompra;
+        }
+
+        public int getClaveProducto() {
+            return claveProducto;
+        }
+
+        public double getCantidad() {
+            return cantidad;
+        }
+
+
+        public void setClavePartida(int clavePartida) {
+            this.clavePartida = clavePartida;
+        }
+
+        public void setClaveCompra(int claveCompra) {
+            this.claveCompra = claveCompra;
+        }
+
+        public void setClaveProducto(int claveProducto) {
+            this.claveProducto = claveProducto;
+        }
+
+        public void setCantidad(double cantidad) {
+            this.cantidad = cantidad;
+        }
+
     }
 }

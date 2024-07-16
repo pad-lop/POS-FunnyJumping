@@ -16,7 +16,7 @@ import java.util.HashMap;
 import java.util.Properties;
 import java.io.FileInputStream;
 
-public class CortePrinter {
+public class PrinterCorte {
 
     private static final float POINT_TO_MM = 2.83465f;
     private static final float PAGE_WIDTH = 80 * POINT_TO_MM;
@@ -84,7 +84,6 @@ public class CortePrinter {
         List<String> lines = new ArrayList<>();
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
         lines.add("");
-
         lines.add("HEADER:Funny Jumping");
         lines.add("");
         lines.add("BOLD:Reporte de Corte");

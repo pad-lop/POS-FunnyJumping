@@ -33,9 +33,11 @@
     <filter-actions connection-id="64ced874-d1fd-42ce-85a9-fe1978aaaf7b" dataset="main.partidas_ventas" active-filter-id="EMPTY_FILTER" />
     <filter-actions connection-id="64ced874-d1fd-42ce-85a9-fe1978aaaf7b" dataset="main.usuarios" active-filter-id="EMPTY_FILTER" />
     <filter-actions connection-id="64ced874-d1fd-42ce-85a9-fe1978aaaf7b" dataset="main.cortes" active-filter-id="EMPTY_FILTER" />
+    <filter-actions connection-id="64ced874-d1fd-42ce-85a9-fe1978aaaf7b" dataset="main.partidas_compras" active-filter-id="EMPTY_FILTER" />
     <filter-actions connection-id="64ced874-d1fd-42ce-85a9-fe1978aaaf7b" dataset="main.ventas" active-filter-id="EMPTY_FILTER" />
     <filter-actions connection-id="64ced874-d1fd-42ce-85a9-fe1978aaaf7b" dataset="main.tiempos" active-filter-id="EMPTY_FILTER" />
     <filter-actions connection-id="64ced874-d1fd-42ce-85a9-fe1978aaaf7b" dataset="main.temporizador" active-filter-id="EMPTY_FILTER" />
+    <filter-actions connection-id="64ced874-d1fd-42ce-85a9-fe1978aaaf7b" dataset="main.compras" active-filter-id="EMPTY_FILTER" />
   </component>
   <component name="DBNavigator.Project.ExecutionManager">
     <retain-sticky-names value="false" />

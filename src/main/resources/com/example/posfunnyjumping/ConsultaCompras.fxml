@@ -56,8 +56,6 @@
                              text="Folio"/>
                 <TableColumn fx:id="compraFechaColumn" editable="false" prefWidth="201.0" sortable="false"
                              text="Fecha"/>
-                <TableColumn fx:id="compraTotalColumn" editable="false" prefWidth="299.0" sortable="false"
-                             text="Total"/>
                 <TableColumn fx:id="compraCorteColumn" editable="false" prefWidth="94.0" sortable="false"
                              text="Corte"/>
                 <TableColumn fx:id="compraNombreEncargadoColumn" editable="false" prefWidth="94.0"

@@ -276,7 +276,7 @@ public class ControllerCortes {
         Button printButton = (Button) dialog.getDialogPane().lookupButton(printButtonType);
         printButton.addEventFilter(ActionEvent.ACTION, event -> {
             event.consume(); // prevent dialog from closing
-            CortePrinter.printCorte(corte, ventas);
+            PrinterCorte.printCorte(corte, ventas);
         });
 
         dialog.showAndWait();

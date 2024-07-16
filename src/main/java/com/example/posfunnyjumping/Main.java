@@ -19,6 +19,7 @@ public class Main extends Application {
         Scene scene = new Scene(loginScreen, 800, 600);
         primaryStage.setScene(scene);
         primaryStage.show();
+
     }
 
     private void loadMainApplication(Stage stage) {

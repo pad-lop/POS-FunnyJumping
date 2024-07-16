@@ -882,6 +882,16 @@ public class ControllerCortes {
         navigateTo("Temporizador.fxml", event);
     }
 
+    @FXML
+    protected void onConsultaInventariosButtonClick(ActionEvent event) throws IOException {
+        navigateTo("ConsultaInventarios.fxml", event);
+    }
+
+    @FXML
+    protected void onConsultaComprasButtonClick(ActionEvent event) throws IOException {
+        navigateTo("ConsultaCompras.fxml", event);
+    }
+
     private void navigateTo(String fxmlFile, ActionEvent event) throws IOException {
         Parent root = FXMLLoader.load(Objects.requireNonNull(getClass().getResource(fxmlFile)));
         Stage stage = (Stage) (((Node) event.getSource()).getScene().getWindow());

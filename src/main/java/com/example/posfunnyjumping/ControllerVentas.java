@@ -288,6 +288,17 @@ public class ControllerVentas {
         stage.show();
     }
 
+
+    @FXML
+    protected void onConsultaInventariosButtonClick(ActionEvent event) throws IOException {
+        navigateTo("ConsultaInventarios.fxml", event);
+    }
+
+    @FXML
+    protected void onConsultaComprasButtonClick(ActionEvent event) throws IOException {
+        navigateTo("ConsultaCompras.fxml", event);
+    }
+
     @FXML
     protected void onConsultaVentasButtonClick(ActionEvent event) throws IOException {
         navigateTo("ConsultaVentas.fxml", event);

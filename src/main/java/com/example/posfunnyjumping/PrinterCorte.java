@@ -4,9 +4,10 @@ import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.pdmodel.PDPageContentStream;
 import org.apache.pdfbox.pdmodel.common.PDRectangle;
-import org.apache.pdfbox.pdmodel.font.PDType1Font;
+import org.apache.pdfbox.pdmodel.font.PDType0Font;
 import org.apache.pdfbox.pdmodel.graphics.image.PDImageXObject;
 
+import java.io.File;
 import java.io.IOException;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -21,7 +22,8 @@ public class PrinterCorte {
     private static final float POINT_TO_MM = 2.83465f;
     private static final float PAGE_WIDTH = 80 * POINT_TO_MM;
     private static final float MARGIN = 5 * POINT_TO_MM;
-    private static final float FONT_SIZE = 8;
+    private static final float FONT_SIZE = 10;
+    private static final float HEADER_FONT_SIZE = 14;
     private static final float LEADING = 1.5f * FONT_SIZE;
     private static final String SETTINGS_FILE = "settings.txt";
 
@@ -30,6 +32,11 @@ public class PrinterCorte {
             Properties settings = loadSettings();
             String printerName = settings.getProperty("Printer");
             String logoPath = settings.getProperty("LogoPath");
+            String boldFontPath = settings.getProperty("BoldFontPath");
+            String regularFontPath = settings.getProperty("RegularFontPath");
+
+            PDType0Font boldFont = loadFont(document, boldFontPath);
+            PDType0Font regularFont = loadFont(document, regularFontPath);
 
             List<String> contentLines = generateContentLines(corte, ventas);
             float pageHeight = calculatePageHeight(contentLines) + 40 * POINT_TO_MM; // Extra space for logo
@@ -40,38 +47,36 @@ public class PrinterCorte {
             try (PDPageContentStream contentStream = new PDPageContentStream(document, page)) {
                 float y = pageHeight - MARGIN;
 
-                // Add logo
                 if (logoPath != null && !logoPath.isEmpty()) {
                     PDImageXObject logo = PDImageXObject.createFromFile(logoPath, document);
                     float logoWidth = logo.getWidth();
                     float logoHeight = logo.getHeight();
-                    float maxWidth = 50 * POINT_TO_MM; // Reduced from 70 to 50 mm
-                    float maxHeight = 25 * POINT_TO_MM; // Reduced from 35 to 25 mm
+                    float maxWidth = 50 * POINT_TO_MM;
+                    float maxHeight = 25 * POINT_TO_MM;
 
                     float scale = Math.min(maxWidth / logoWidth, maxHeight / logoHeight);
                     float scaledWidth = logoWidth * scale;
                     float scaledHeight = logoHeight * scale;
 
-                    float xPosition = (PAGE_WIDTH - scaledWidth) / 2; // Center horizontally
+                    float xPosition = (PAGE_WIDTH - scaledWidth) / 2;
                     contentStream.drawImage(logo, xPosition, y - scaledHeight, scaledWidth, scaledHeight);
                     y -= (scaledHeight + MARGIN);
                 }
 
                 for (String line : contentLines) {
                     if (line.startsWith("HEADER:")) {
-                        y = addText(contentStream, line.substring(7), y, PDType1Font.COURIER_BOLD, 12);
+                        y = addText(contentStream, line.substring(7), y, boldFont, HEADER_FONT_SIZE);
                     } else if (line.startsWith("BOLD:")) {
-                        y = addText(contentStream, line.substring(5), y, PDType1Font.COURIER_BOLD);
+                        y = addText(contentStream, line.substring(5), y, boldFont, FONT_SIZE);
                     } else {
-                        y = addText(contentStream, line, y, PDType1Font.COURIER);
+                        y = addText(contentStream, line, y, regularFont, FONT_SIZE);
                     }
                 }
             }
 
-                  document.save("corte.pdf");
+            document.save("corte.pdf");
             System.out.println("Corte saved as corte.pdf");
 
-            // Print the document using the specified printer
             if (printerName != null && !printerName.isEmpty()) {
                 PrinterUtility.printPDF("corte.pdf", printerName);
             } else {
@@ -89,7 +94,6 @@ public class PrinterCorte {
         lines.add("HEADER:Funny Jumping");
         lines.add("");
         lines.add("BOLD:Reporte de Corte");
-        lines.add("");
         lines.add("Clave: " + corte.getClave());
         lines.add("Estado: " + corte.getEstado());
         lines.add("Recibo Inicial: " + corte.getReciboInicial());
@@ -132,6 +136,8 @@ public class PrinterCorte {
 
         lines.add("----------------------------------------");
         lines.add(String.format("BOLD:Total:                     $%.2f", totalSubtotal));
+        lines.add("");
+        lines.add("");
 
 
         return lines;
@@ -140,17 +146,13 @@ public class PrinterCorte {
     private static Map<String, ProductSummary> summarizeProducts(List<DatabaseManager.Venta> ventas) {
         Map<String, ProductSummary> summary = new HashMap<>();
         for (DatabaseManager.Venta venta : ventas) {
-
             List<DatabaseManager.PartidaVenta> partidas = DatabaseManager.VentaDAO.getPartidasByVenta(venta.getClaveVenta());
-
             for (DatabaseManager.PartidaVenta partida : partidas) {
-
                 String key = partida.getDescripcion();
                 summary.putIfAbsent(key, new ProductSummary());
                 ProductSummary productSummary = summary.get(key);
                 productSummary.quantity += partida.getCantidad();
                 productSummary.subtotal += partida.getSubtotal();
-
             }
         }
         return summary;
@@ -164,18 +166,10 @@ public class PrinterCorte {
     private static float calculatePageHeight(List<String> contentLines) {
         int lineCount = contentLines.size();
         float contentHeight = lineCount * LEADING;
-        return contentHeight + (2 * MARGIN); // Add top and bottom margins
+        return contentHeight + (2 * MARGIN);
     }
 
-    private static float addText(PDPageContentStream contentStream, String text, float y) throws IOException {
-        return addText(contentStream, text, y, PDType1Font.COURIER, FONT_SIZE);
-    }
-
-    private static float addText(PDPageContentStream contentStream, String text, float y, PDType1Font font) throws IOException {
-        return addText(contentStream, text, y, font, FONT_SIZE);
-    }
-
-    private static float addText(PDPageContentStream contentStream, String text, float y, PDType1Font font, float fontSize) throws IOException {
+    private static float addText(PDPageContentStream contentStream, String text, float y, PDType0Font font, float fontSize) throws IOException {
         contentStream.beginText();
         contentStream.setFont(font, fontSize);
         contentStream.newLineAtOffset(MARGIN, y);
@@ -188,7 +182,7 @@ public class PrinterCorte {
         if (str.length() <= maxLength) {
             return str;
         }
-        return str.substring(0, maxLength - 3) + "...";
+        return str.substring(0, maxLength - 2) + "..";
     }
 
     private static Properties loadSettings() {
@@ -199,5 +193,9 @@ public class PrinterCorte {
             System.out.println("Error loading settings: " + e.getMessage());
         }
         return props;
+    }
+
+    private static PDType0Font loadFont(PDDocument document, String fontPath) throws IOException {
+        return PDType0Font.load(document, new File(fontPath));
     }
 }

@@ -26,12 +26,26 @@ public class ControllerAjustes {
     @FXML
     private Button guardarButton;
 
+    @FXML
+    private TextField regularFontPath;
+
+    @FXML
+    private TextField boldFontPath;
+
+    @FXML
+    private Button buscarRegularFontButton;
+
+    @FXML
+    private Button buscarBoldFontButton;
+
     private static final String SETTINGS_FILE = "settings.txt";
 
     @FXML
     public void initialize() {
-        loadPrinters();
+         loadPrinters();
         setupBuscarLogoButton();
+        setupBuscarRegularFontButton();
+        setupBuscarBoldFontButton();
         setupGuardarButton();
         loadSettings();
     }
@@ -41,6 +55,33 @@ public class ControllerAjustes {
         for (PrintService printer : printServices) {
             impresorasComboBox.getItems().add(printer.getName());
         }
+    }
+
+    private void setupBuscarRegularFontButton() {
+        buscarRegularFontButton.setOnAction(event -> {
+            File selectedFile = chooseFontFile("Seleccionar Fuente Regular");
+            if (selectedFile != null) {
+                regularFontPath.setText(selectedFile.getAbsolutePath());
+            }
+        });
+    }
+
+    private void setupBuscarBoldFontButton() {
+        buscarBoldFontButton.setOnAction(event -> {
+            File selectedFile = chooseFontFile("Seleccionar Fuente Negrita");
+            if (selectedFile != null) {
+                boldFontPath.setText(selectedFile.getAbsolutePath());
+            }
+        });
+    }
+
+    private File chooseFontFile(String title) {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle(title);
+        fileChooser.getExtensionFilters().addAll(
+                new FileChooser.ExtensionFilter("TTF Files", "*.ttf")
+        );
+        return fileChooser.showOpenDialog(new Stage());
     }
 
     private void setupBuscarLogoButton() {
@@ -70,10 +111,12 @@ public class ControllerAjustes {
         });
     }
 
-    private void saveSettings(String printer, String logoPath) {
+  private void saveSettings(String printer, String logoPath) {
         Properties props = new Properties();
         props.setProperty("Printer", printer);
         props.setProperty("LogoPath", logoPath);
+        props.setProperty("RegularFontPath", regularFontPath.getText());
+        props.setProperty("BoldFontPath", boldFontPath.getText());
 
         try (FileOutputStream out = new FileOutputStream(SETTINGS_FILE)) {
             props.store(out, "POS Funny Jumping Settings");
@@ -97,6 +140,16 @@ public class ControllerAjustes {
             String savedLogoPath = props.getProperty("LogoPath");
             if (savedLogoPath != null) {
                 ubicacionLogo.setText(savedLogoPath);
+            }
+
+             String savedRegularFontPath = props.getProperty("RegularFontPath");
+            if (savedRegularFontPath != null) {
+                regularFontPath.setText(savedRegularFontPath);
+            }
+
+            String savedBoldFontPath = props.getProperty("BoldFontPath");
+            if (savedBoldFontPath != null) {
+                boldFontPath.setText(savedBoldFontPath);
             }
 
             System.out.println("Settings loaded successfully.");

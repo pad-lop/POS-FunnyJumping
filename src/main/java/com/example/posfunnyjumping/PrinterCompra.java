@@ -4,9 +4,10 @@ import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.pdmodel.PDPageContentStream;
 import org.apache.pdfbox.pdmodel.common.PDRectangle;
-import org.apache.pdfbox.pdmodel.font.PDType1Font;
+import org.apache.pdfbox.pdmodel.font.PDType0Font;
 import org.apache.pdfbox.pdmodel.graphics.image.PDImageXObject;
 
+import java.io.File;
 import java.io.IOException;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -18,8 +19,9 @@ public class PrinterCompra {
 
     private static final float POINT_TO_MM = 2.83465f;
     private static final float PAGE_WIDTH = 80 * POINT_TO_MM;
-    private static final float MARGIN = 5 * POINT_TO_MM;
-    private static final float FONT_SIZE = 8;
+    private static final float MARGIN = (float) (0.5 * POINT_TO_MM);
+    private static final float FONT_SIZE = 10;
+    private static final float HEADER_FONT_SIZE = 14;
     private static final float LEADING = 1.5f * FONT_SIZE;
     private static final String SETTINGS_FILE = "settings.txt";
 
@@ -28,6 +30,11 @@ public class PrinterCompra {
             Properties settings = loadSettings();
             String printerName = settings.getProperty("Printer");
             String logoPath = settings.getProperty("LogoPath");
+            String boldFontPath = settings.getProperty("BoldFontPath");
+            String regularFontPath = settings.getProperty("RegularFontPath");
+
+            PDType0Font boldFont = loadFont(document, boldFontPath);
+            PDType0Font regularFont = loadFont(document, regularFontPath);
 
             List<String> contentLines = generateContentLines(compra, partidas);
             float pageHeight = calculatePageHeight(contentLines) + 40 * POINT_TO_MM; // Extra space for logo
@@ -57,11 +64,11 @@ public class PrinterCompra {
 
                 for (String line : contentLines) {
                     if (line.startsWith("HEADER:")) {
-                        y = addText(contentStream, line.substring(7), y, PDType1Font.COURIER_BOLD, 12);
+                        y = addText(contentStream, line.substring(7), y, boldFont, HEADER_FONT_SIZE);
                     } else if (line.startsWith("BOLD:")) {
-                        y = addText(contentStream, line.substring(5), y, PDType1Font.COURIER_BOLD);
+                        y = addText(contentStream, line.substring(5), y, boldFont, FONT_SIZE);
                     } else {
-                        y = addText(contentStream, line, y, PDType1Font.COURIER);
+                        y = addText(contentStream, line, y, regularFont, FONT_SIZE);
                     }
                 }
             }
@@ -83,6 +90,7 @@ public class PrinterCompra {
     private static List<String> generateContentLines(DatabaseManager.Compra compra, List<DatabaseManager.PartidaCompra> partidas) {
         List<String> lines = new ArrayList<>();
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy hh:mm:ss a");
+        lines.add("");
         lines.add("");
         lines.add("HEADER:Funny Jumping");
         lines.add("");
@@ -114,15 +122,7 @@ public class PrinterCompra {
         return contentHeight + (2 * MARGIN); // Add top and bottom margins
     }
 
-    private static float addText(PDPageContentStream contentStream, String text, float y) throws IOException {
-        return addText(contentStream, text, y, PDType1Font.COURIER, FONT_SIZE);
-    }
-
-    private static float addText(PDPageContentStream contentStream, String text, float y, PDType1Font font) throws IOException {
-        return addText(contentStream, text, y, font, FONT_SIZE);
-    }
-
-    private static float addText(PDPageContentStream contentStream, String text, float y, PDType1Font font, float fontSize) throws IOException {
+    private static float addText(PDPageContentStream contentStream, String text, float y, PDType0Font font, float fontSize) throws IOException {
         contentStream.beginText();
         contentStream.setFont(font, fontSize);
         contentStream.newLineAtOffset(MARGIN, y);
@@ -135,7 +135,7 @@ public class PrinterCompra {
         if (str.length() <= maxLength) {
             return str;
         }
-        return str.substring(0, maxLength - 3) + "...";
+        return str.substring(0, maxLength - 2) + "..";
     }
 
     private static Properties loadSettings() {
@@ -146,5 +146,9 @@ public class PrinterCompra {
             System.out.println("Error loading settings: " + e.getMessage());
         }
         return props;
+    }
+
+    private static PDType0Font loadFont(PDDocument document, String fontPath) throws IOException {
+        return PDType0Font.load(document, new File(fontPath));
     }
 }

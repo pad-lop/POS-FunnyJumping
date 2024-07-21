@@ -11,6 +11,7 @@ import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Optional;
@@ -84,6 +85,12 @@ public class Login extends VBox {
         Properties settings = loadSettings();
         String logoPath = settings.getProperty("LogoPath");
 
+        if (logoPath == null || logoPath.isEmpty()) {
+            System.out.println("Logo path not set in settings.");
+            return null;
+        }
+
+
         if (logoPath != null && !logoPath.isEmpty()) {
             try {
                 Image logo = new Image(new FileInputStream(logoPath));
@@ -107,7 +114,14 @@ public class Login extends VBox {
 
     private static Properties loadSettings() {
         Properties props = new Properties();
-        try (FileInputStream in = new FileInputStream(SETTINGS_FILE)) {
+        File settingsFile = new File(SETTINGS_FILE);
+
+        if (!settingsFile.exists()) {
+            System.out.println("Warning: settings.txt file not found. Using default settings.");
+            return props; // Return empty properties
+        }
+
+        try (FileInputStream in = new FileInputStream(settingsFile)) {
             props.load(in);
         } catch (IOException e) {
             System.out.println("Error loading settings: " + e.getMessage());

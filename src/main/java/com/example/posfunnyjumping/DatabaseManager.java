@@ -47,6 +47,16 @@ public class DatabaseManager {
     private static final String CREATE_TABLE_PARTIDAS_VENTAS = "CREATE TABLE IF NOT EXISTS partidas_ventas (" + "clave_partida INTEGER PRIMARY KEY AUTOINCREMENT, " + "clave_venta INTEGER NOT NULL, " + "clave_producto INTEGER, " + "descripcion TEXT, " + "isTrampolinTiempo BOOLEAN NOT NULL DEFAULT FALSE, " + "clave_tiempo INTEGER, " + "nombre_trampolin TEXT, " + "minutos_trampolin INTEGER, " + "cantidad INT NOT NULL, " + "precio_unitario REAL NOT NULL, " + "subtotal REAL NOT NULL, " + "FOREIGN KEY (clave_venta) REFERENCES ventas(clave_venta), " + "FOREIGN KEY (clave_producto) REFERENCES productos(clave), " + "FOREIGN KEY (clave_tiempo) REFERENCES tiempos(clave))";
 
 
+    public static void initializeDatabase() {
+        try {
+            initializeDataSource();
+            createTables();
+        } catch (SQLException e) {
+            logger.error("Error initializing database", e);
+            throw new DatabaseException("Error initializing database", e);
+        }
+    }
+
     static {
         try {
             initializeDataSource();

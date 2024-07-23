@@ -205,6 +205,7 @@ public class ControllerCompras {
         alert.setContentText(message);
         alert.showAndWait();
     }
+
     private void showErrorAlert(String message) {
         Alert alert = new Alert(Alert.AlertType.ERROR);
         alert.setTitle("Error");

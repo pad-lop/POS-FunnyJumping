@@ -2,7 +2,10 @@ package com.example.posfunnyjumping;
 
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
-import javafx.scene.control.*;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.control.PasswordField;
+import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.Region;
@@ -18,7 +21,7 @@ import java.util.Optional;
 import java.util.Properties;
 import java.util.function.Consumer;
 
-public class Login extends VBox {
+public class LoginConfiguracion extends VBox {
     private TextField claveTextField;
     private PasswordField pwBox;
     private Label usernameLabel;
@@ -26,7 +29,7 @@ public class Login extends VBox {
     private Consumer<DatabaseManager.Usuario> onLoginSuccess;
     private static final String SETTINGS_FILE = "settings.txt";
 
-    public Login() {
+    public LoginConfiguracion() {
         setAlignment(Pos.CENTER);
         setSpacing(10);
         setPadding(new Insets(20));
@@ -89,6 +92,7 @@ public class Login extends VBox {
             System.out.println("Logo path not set in settings.");
             return null;
         }
+
 
         if (logoPath != null && !logoPath.isEmpty()) {
             try {
@@ -169,6 +173,7 @@ public class Login extends VBox {
             return;
         }
 
+        // Existing login logic
         try {
             int claveId = Integer.parseInt(clave);
             Optional<DatabaseManager.Usuario> usuario = DatabaseManager.UsuarioDAO.getById(claveId);

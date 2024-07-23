@@ -66,19 +66,21 @@ public class ControllerTiempos {
         grid.setVgap(10);
         grid.setPadding(new Insets(20, 150, 10, 10));
 
-        TextField claveField = new TextField(String.valueOf(tiempo.getClave()));
-        claveField.setEditable(false);
+        if (tiempo.getClave() != 0) {
+            Label claveLabel = new Label(String.valueOf(tiempo.getClave()));
+            grid.add(new Label("Clave:"), 0, 0);
+            grid.add(claveLabel, 1, 0);
+        }
+
         TextField minutosField = new TextField(String.valueOf(tiempo.getMinutos()));
         minutosField.setId("minutosField");
         TextField precioField = new TextField(String.valueOf(tiempo.getPrecio()));
         precioField.setId("precioField");
 
-        grid.add(new Label("Clave:"), 0, 0);
-        grid.add(claveField, 1, 0);
-        grid.add(new Label("Minutos:"), 0, 1);
-        grid.add(minutosField, 1, 1);
-        grid.add(new Label("Precio:"), 0, 2);
-        grid.add(precioField, 1, 2);
+        grid.add(new Label("Minutos:"), 0, tiempo.getClave() != 0 ? 1 : 0);
+        grid.add(minutosField, 1, tiempo.getClave() != 0 ? 1 : 0);
+        grid.add(new Label("Precio:"), 0, tiempo.getClave() != 0 ? 2 : 1);
+        grid.add(precioField, 1, tiempo.getClave() != 0 ? 2 : 1);
 
         minutosField.setTooltip(new Tooltip("Ingrese los minutos del tiempo"));
         precioField.setTooltip(new Tooltip("Ingrese el precio del tiempo"));

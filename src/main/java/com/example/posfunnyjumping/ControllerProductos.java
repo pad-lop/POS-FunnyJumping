@@ -74,18 +74,26 @@ public class ControllerProductos {
         grid.setVgap(10);
         grid.setPadding(new Insets(20, 150, 10, 10));
 
-        Label claveLabel = new Label(String.valueOf(producto.getClave()));
+        int rowIndex = 0;
+
+        if (producto.getClave() != 0) {
+            Label claveLabel = new Label(String.valueOf(producto.getClave()));
+            grid.add(new Label("Clave:"), 0, rowIndex);
+            grid.add(claveLabel, 1, rowIndex);
+            rowIndex++;
+        }
+
         TextField descripcionField = new TextField(producto.getDescripcion());
         descripcionField.setId("descripcionField");
         TextField precioField = new TextField(String.valueOf(producto.getPrecio()));
         precioField.setId("precioField");
 
-        grid.add(new Label("Clave:"), 0, 0);
-        grid.add(claveLabel, 1, 0);
-        grid.add(new Label("Descripción:"), 0, 1);
-        grid.add(descripcionField, 1, 1);
-        grid.add(new Label("Precio:"), 0, 2);
-        grid.add(precioField, 1, 2);
+        grid.add(new Label("Descripción:"), 0, rowIndex);
+        grid.add(descripcionField, 1, rowIndex);
+        rowIndex++;
+
+        grid.add(new Label("Precio:"), 0, rowIndex);
+        grid.add(precioField, 1, rowIndex);
 
         // Add tooltips for accessibility
         descripcionField.setTooltip(new Tooltip("Ingrese la descripción del producto"));

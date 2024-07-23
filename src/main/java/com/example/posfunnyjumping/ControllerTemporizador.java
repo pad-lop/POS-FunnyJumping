@@ -27,7 +27,7 @@ import javafx.util.Duration;
 import java.time.format.DateTimeFormatter;
 
 import javafx.scene.control.cell.PropertyValueFactory;
-
+import com.example.posfunnyjumping.Main;
 
 public class ControllerTemporizador {
     private static final Logger logger = LoggerFactory.getLogger(ControllerTemporizador.class);

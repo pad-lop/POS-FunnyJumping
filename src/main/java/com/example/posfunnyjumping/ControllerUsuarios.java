@@ -66,8 +66,12 @@ public class ControllerUsuarios {
         grid.setVgap(10);
         grid.setPadding(new Insets(20, 150, 10, 10));
 
-        TextField claveField = new TextField(String.valueOf(usuario.getClave()));
-        claveField.setEditable(false);
+        if (usuario.getClave() != 0) {
+            Label claveLabel = new Label(String.valueOf(usuario.getClave()));
+            grid.add(new Label("Clave:"), 0, 0);
+            grid.add(claveLabel, 1, 0);
+        }
+
         TextField nombreField = new TextField(usuario.getNombre());
         nombreField.setId("nombreField");
         PasswordField contrasenaField = new PasswordField();
@@ -76,12 +80,10 @@ public class ControllerUsuarios {
             contrasenaField.setPromptText("Deje en blanco para no cambiar");
         }
 
-        grid.add(new Label("Clave:"), 0, 0);
-        grid.add(claveField, 1, 0);
-        grid.add(new Label("Nombre:"), 0, 1);
-        grid.add(nombreField, 1, 1);
-        grid.add(new Label("Contraseña:"), 0, 2);
-        grid.add(contrasenaField, 1, 2);
+        grid.add(new Label("Nombre:"), 0, usuario.getClave() != 0 ? 1 : 0);
+        grid.add(nombreField, 1, usuario.getClave() != 0 ? 1 : 0);
+        grid.add(new Label("Contraseña:"), 0, usuario.getClave() != 0 ? 2 : 1);
+        grid.add(contrasenaField, 1, usuario.getClave() != 0 ? 2 : 1);
 
         nombreField.setTooltip(new Tooltip("Ingrese el nombre del usuario"));
         contrasenaField.setTooltip(new Tooltip("Ingrese la contrasena del usuario"));

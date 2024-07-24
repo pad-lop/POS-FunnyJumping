@@ -33,7 +33,10 @@
          <Button fx:id="buscarRegularFontButton" alignment="CENTER" contentDisplay="CENTER" mnemonicParsing="false" text="..." GridPane.columnIndex="2" GridPane.rowIndex="2" />
          <Label text="Fuente Negrita (.ttf)" GridPane.rowIndex="3" />
          <TextField fx:id="boldFontPath" GridPane.columnIndex="1" GridPane.rowIndex="3" />
-         <Button fx:id="buscarBoldFontButton" alignment="CENTER" contentDisplay="CENTER" mnemonicParsing="false" text="..." GridPane.columnIndex="2" GridPane.rowIndex="3" />
+         <Label text="Precio para Todo el Día Trampolín" GridPane.rowIndex="4" />
+         <TextField fx:id="precioTodoElDiaField" GridPane.columnIndex="1" GridPane.rowIndex="4" />
+
+          <Button fx:id="buscarBoldFontButton" alignment="CENTER" contentDisplay="CENTER" mnemonicParsing="false" text="..." GridPane.columnIndex="2" GridPane.rowIndex="3" />
       </children>
    </GridPane>
    <Button fx:id="guardarButton" layoutX="375.0" layoutY="381.0" mnemonicParsing="false" prefHeight="25.0" prefWidth="108.0" text="Guardar" AnchorPane.bottomAnchor="30.0" AnchorPane.rightAnchor="30.0" />

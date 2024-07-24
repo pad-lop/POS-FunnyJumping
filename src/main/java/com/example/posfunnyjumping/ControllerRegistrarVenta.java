@@ -16,6 +16,7 @@ import javafx.util.Callback;
 import javafx.util.StringConverter;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.time.LocalDateTime;
 
 import javafx.scene.control.cell.PropertyValueFactory;
@@ -76,7 +77,7 @@ public class ControllerRegistrarVenta {
     }
 
     private void initializeTiemposComboBox() {
-        List<DatabaseManager.Tiempo> tiemposList = DatabaseManager.TiempoDAO.getAll();
+        List<DatabaseManager.Tiempo> tiemposList = DatabaseManager.TiempoDAO.getAllWithTodoElDia();
         ObservableList<DatabaseManager.Tiempo> observableTiempos = FXCollections.observableArrayList(tiemposList);
         minutosComboBox.setItems(observableTiempos);
 
@@ -89,6 +90,8 @@ public class ControllerRegistrarVenta {
                         super.updateItem(item, empty);
                         if (item == null || empty) {
                             setText(null);
+                        } else if (item.isTodoElDia()) {
+                            setText("Todo el día - $" + item.getPrecio());
                         } else {
                             setText(item.getMinutos() + " minutos - $" + item.getPrecio());
                         }
@@ -103,6 +106,9 @@ public class ControllerRegistrarVenta {
                 if (tiempo == null) {
                     return null;
                 }
+                if (tiempo.isTodoElDia()) {
+                    return "Todo el día - $" + tiempo.getPrecio();
+                }
                 return tiempo.getMinutos() + " minutos - $" + tiempo.getPrecio();
             }
 
@@ -112,6 +118,7 @@ public class ControllerRegistrarVenta {
             }
         });
     }
+
 
     private void initializeProductosTable() {
         productoDescripcionColumn.setCellValueFactory(new PropertyValueFactory<>("descripcion"));
@@ -173,8 +180,18 @@ public class ControllerRegistrarVenta {
         String nombre = agregarNombreTextField.getText().trim();
 
         if (selectedTiempo != null && !nombre.isEmpty()) {
-            String descripcion = nombre + " " + String.valueOf(selectedTiempo.getMinutos()) + " Mins.";
-            OrdenItem trampolinItem = new OrdenItem(selectedTiempo.getClave(), descripcion, selectedTiempo.getPrecio(), 1, true, nombre, selectedTiempo.getMinutos());
+            String descripcion;
+            int minutos;
+
+            if (selectedTiempo.isTodoElDia()) {
+                minutos = calcularMinutosHastaMedianoche();
+                descripcion = nombre + " Todo el día (" + minutos + " Mins.)";
+            } else {
+                minutos = selectedTiempo.getMinutos();
+                descripcion = nombre + " " + minutos + " Mins.";
+            }
+
+            OrdenItem trampolinItem = new OrdenItem(selectedTiempo.getClave(), descripcion, selectedTiempo.getPrecio(), 1, true, nombre, minutos);
             ordenItems.add(trampolinItem);
             agregarNombreTextField.clear();
             minutosComboBox.getSelectionModel().clearSelection();
@@ -182,6 +199,12 @@ public class ControllerRegistrarVenta {
         } else {
             showAlert("Por favor, seleccione el tiempo y ingrese un nombre.");
         }
+    }
+
+    private int calcularMinutosHastaMedianoche() {
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime midnight = now.toLocalDate().plusDays(1).atStartOfDay();
+        return (int) Duration.between(now, midnight).toMinutes();
     }
 
     private void agregarProducto(DatabaseManager.Producto producto) {

@@ -5,11 +5,14 @@ import com.zaxxer.hikari.HikariDataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.sql.*;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Properties;
 
 
 public class DatabaseManager {
@@ -39,7 +42,7 @@ public class DatabaseManager {
 
     private static final String CREATE_TABLE_PRODUCTOS = "CREATE TABLE IF NOT EXISTS productos (" + "clave INTEGER PRIMARY KEY AUTOINCREMENT, " + "descripcion TEXT NOT NULL, " + "precio REAL NOT NULL DEFAULT 0, " + "existencia REAL NOT NULL DEFAULT 0)";
 
-    private static final String CREATE_TABLE_TIEMPOS = "CREATE TABLE IF NOT EXISTS tiempos (" + "clave INTEGER PRIMARY KEY AUTOINCREMENT, " + "minutos REAL NOT NULL, " + "precio REAL NOT NULL DEFAULT 0)";
+    private static final String CREATE_TABLE_TIEMPOS = "CREATE TABLE IF NOT EXISTS tiempos (" + "clave INTEGER PRIMARY KEY AUTOINCREMENT, " + "minutos REAL NOT NULL, " + "precio REAL NOT NULL DEFAULT 0," + "isTodoElDia BOOLEAN NOT NULL DEFAULT FALSE)";
 
     private static final String CREATE_TABLE_VENTAS = "CREATE TABLE IF NOT EXISTS ventas (" + "clave_venta INTEGER PRIMARY KEY AUTOINCREMENT, " + "fecha_venta TIMESTAMP NOT NULL, " + "total REAL NOT NULL DEFAULT 0, " + "cambio REAL NOT NULL DEFAULT 0, " + "clave_corte INTEGER, " + "metodo_pago TEXT, " + "monto_pago REAL NOT NULL DEFAULT 0, " + "clave_encargado INTEGER, " + "nombre_encargado TEXT, " +
 
@@ -133,7 +136,6 @@ public class DatabaseManager {
         }
     }
 
-    // Producto related methods
     public static class Producto {
         private final int clave;
         private final String descripcion;
@@ -232,16 +234,26 @@ public class DatabaseManager {
 
     }
 
-    // Tiempo related methods
     public static class Tiempo {
         private final int clave;
         private final int minutos;
         private final double precio;
 
-        public Tiempo(int clave, int minutos, double precio) {
+        private boolean todoElDia;
+
+        public Tiempo(int clave, int minutos, double precio, boolean todoElDia) {
             this.clave = clave;
             this.minutos = minutos;
             this.precio = precio;
+            this.todoElDia = todoElDia;
+        }
+
+        public boolean isTodoElDia() {
+            return todoElDia;
+        }
+
+        public void setTodoElDia(boolean todoElDia) {
+            this.todoElDia = todoElDia;
         }
 
         // Getters
@@ -263,6 +275,10 @@ public class DatabaseManager {
         private static final String UPDATE_TIEMPO = "UPDATE tiempos SET minutos = ?, precio = ? WHERE clave = ?";
         private static final String DELETE_TIEMPO = "DELETE FROM tiempos WHERE clave = ?";
         private static final String SELECT_ALL_TIEMPOS = "SELECT * FROM tiempos";
+
+
+        private static final String SETTINGS_FILE = "settings.txt";
+
 
         public static void insert(Tiempo tiempo) {
             try (Connection conn = getConnection(); PreparedStatement pstmt = conn.prepareStatement(INSERT_TIEMPO)) {
@@ -298,11 +314,31 @@ public class DatabaseManager {
         }
 
         public static List<Tiempo> getAll() {
-            return queryForList(SELECT_ALL_TIEMPOS, rs -> new Tiempo(rs.getInt("clave"), rs.getInt("minutos"), rs.getDouble("precio")));
+            return queryForList(SELECT_ALL_TIEMPOS, rs -> new Tiempo(rs.getInt("clave"), rs.getInt("minutos"), rs.getDouble("precio"), rs.getBoolean("isTodoElDia")));
+        }
+
+        public static List<Tiempo> getAllWithTodoElDia() {
+            List<Tiempo> tiempos = queryForList(SELECT_ALL_TIEMPOS, rs -> new Tiempo(rs.getInt("clave"), rs.getInt("minutos"), rs.getDouble("precio"), rs.getBoolean("isTodoElDia")));
+            tiempos.add(new Tiempo(0, 0, getPrecioTodoElDia(), true));
+            return tiempos;
+        }
+
+        public static double getPrecioTodoElDia() {
+            Properties props = new Properties();
+            try (FileInputStream in = new FileInputStream(SETTINGS_FILE)) {
+                props.load(in);
+                String precioString = props.getProperty("PrecioTodoElDia");
+                if (precioString != null && !precioString.isEmpty()) {
+                    return Double.parseDouble(precioString);
+                }
+            } catch (IOException | NumberFormatException e) {
+                System.out.println("Error al leer el precio de todo el día: " + e.getMessage());
+            }
+            // Valor predeterminado si no se puede leer del archivo
+            return 0.0;
         }
     }
 
-    // Venta related methods
     public static class Venta {
         private int claveVenta;
         private final LocalDateTime fechaVenta;
@@ -398,7 +434,6 @@ public class DatabaseManager {
             this.cambio = cambio;
         }
     }
-
 
     public static class PartidaVenta {
         private final int clavePartida;
@@ -715,7 +750,6 @@ public class DatabaseManager {
 
     }
 
-
     public static class TemporizadorDAO {
         private static final String INSERT_TEMPORIZADOR = "INSERT INTO temporizador (clave_venta, nombre, fecha, minutos, activo, tiempo_restante) VALUES (?, ?, ?, ?, ?, ?)";
         private static final String STOP_TEMPORIZADOR = "UPDATE temporizador SET activo = FALSE, tiempo_restante = ? WHERE clave = ?";
@@ -825,7 +859,6 @@ public class DatabaseManager {
         }
 
     }
-
 
     public static class Corte {
         private int clave;
@@ -1138,7 +1171,6 @@ public class DatabaseManager {
         }
     }
 
-
     public static class Usuario {
         private final int clave;
         private final String nombre;
@@ -1215,7 +1247,6 @@ public class DatabaseManager {
 
 
     }
-
 
     public static class Compra {
         private int clave;

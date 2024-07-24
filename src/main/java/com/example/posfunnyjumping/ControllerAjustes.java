@@ -38,16 +38,20 @@ public class ControllerAjustes {
     @FXML
     private Button buscarBoldFontButton;
 
+    @FXML
+    private TextField precioTodoElDiaField;
+
     private static final String SETTINGS_FILE = "settings.txt";
 
     @FXML
     public void initialize() {
-         loadPrinters();
+        loadPrinters();
         setupBuscarLogoButton();
         setupBuscarRegularFontButton();
         setupBuscarBoldFontButton();
         setupGuardarButton();
         loadSettings();
+
     }
 
     private void loadPrinters() {
@@ -102,30 +106,33 @@ public class ControllerAjustes {
         guardarButton.setOnAction(event -> {
             String selectedPrinter = impresorasComboBox.getValue();
             String logoPath = ubicacionLogo.getText();
+            String precioTodoElDia = precioTodoElDiaField.getText();
 
-            if (selectedPrinter != null && !logoPath.isEmpty()) {
-                saveSettings(selectedPrinter, logoPath);
+            if (selectedPrinter != null && !logoPath.isEmpty() && !precioTodoElDia.isEmpty()) {
+                saveSettings(selectedPrinter, logoPath, precioTodoElDia);
             } else {
-                System.out.println("Please select a printer and logo file.");
+                System.out.println("Por favor, complete todos los campos.");
             }
         });
     }
 
-  private void saveSettings(String printer, String logoPath) {
+    private void saveSettings(String printer, String logoPath, String precioTodoElDia) {
         Properties props = new Properties();
         props.setProperty("Printer", printer);
         props.setProperty("LogoPath", logoPath);
         props.setProperty("RegularFontPath", regularFontPath.getText());
         props.setProperty("BoldFontPath", boldFontPath.getText());
+        props.setProperty("PrecioTodoElDia", precioTodoElDia);
 
         try (FileOutputStream out = new FileOutputStream(SETTINGS_FILE)) {
             props.store(out, "POS Funny Jumping Settings");
-            System.out.println("Settings saved successfully.");
+            System.out.println("Configuración guardada exitosamente.");
         } catch (IOException e) {
             e.printStackTrace();
-            System.out.println("Error saving settings: " + e.getMessage());
+            System.out.println("Error al guardar la configuración: " + e.getMessage());
         }
     }
+
 
     private void loadSettings() {
         Properties props = new Properties();
@@ -142,7 +149,7 @@ public class ControllerAjustes {
                 ubicacionLogo.setText(savedLogoPath);
             }
 
-             String savedRegularFontPath = props.getProperty("RegularFontPath");
+            String savedRegularFontPath = props.getProperty("RegularFontPath");
             if (savedRegularFontPath != null) {
                 regularFontPath.setText(savedRegularFontPath);
             }
@@ -150,6 +157,11 @@ public class ControllerAjustes {
             String savedBoldFontPath = props.getProperty("BoldFontPath");
             if (savedBoldFontPath != null) {
                 boldFontPath.setText(savedBoldFontPath);
+            }
+
+            String savedPrecioTodoElDia = props.getProperty("PrecioTodoElDia");
+            if (savedPrecioTodoElDia != null) {
+                precioTodoElDiaField.setText(savedPrecioTodoElDia);
             }
 
             System.out.println("Settings loaded successfully.");

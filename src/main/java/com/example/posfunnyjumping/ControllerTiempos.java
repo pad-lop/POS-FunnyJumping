@@ -148,7 +148,7 @@ public class ControllerTiempos {
             throw new IllegalArgumentException("El precio debe ser un número positivo.");
         }
 
-        return new DatabaseManager.Tiempo(clave, minutos, precio);
+        return new DatabaseManager.Tiempo(clave, minutos, precio, false);
     }
 
     private <T> TableCell<T, Void> createButtonCell(String buttonText, Consumer<T> action) {
@@ -212,7 +212,7 @@ public class ControllerTiempos {
 
     @FXML
     private void onAddTiempo() {
-        DatabaseManager.Tiempo newTiempo = new DatabaseManager.Tiempo(0, 0, 0.0);
+        DatabaseManager.Tiempo newTiempo = new DatabaseManager.Tiempo(0, 0, 0.0, false);
         showTiempoDialog(newTiempo);
     }
 }

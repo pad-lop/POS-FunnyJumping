@@ -1,6 +1,7 @@
 package com.example.posfunnyjumping;
 
 import javafx.fxml.FXML;
+import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.TextField;
@@ -108,12 +109,35 @@ public class ControllerAjustes {
             String logoPath = ubicacionLogo.getText();
             String precioTodoElDia = precioTodoElDiaField.getText();
 
-            if (selectedPrinter != null && !logoPath.isEmpty() && !precioTodoElDia.isEmpty()) {
-                saveSettings(selectedPrinter, logoPath, precioTodoElDia);
-            } else {
-                System.out.println("Por favor, complete todos los campos.");
+            if (selectedPrinter == null || logoPath.isEmpty() || precioTodoElDia.isEmpty()) {
+                showAlert(Alert.AlertType.ERROR, "Error", "Por favor, complete todos los campos.");
+                return;
             }
+
+            if (!isValidPrice(precioTodoElDia)) {
+                showAlert(Alert.AlertType.ERROR, "Error", "El precio debe ser un número entero o decimal válido.");
+                return;
+            }
+
+            saveSettings(selectedPrinter, logoPath, precioTodoElDia);
         });
+    }
+
+    private boolean isValidPrice(String price) {
+        try {
+            Double.parseDouble(price);
+            return true;
+        } catch (NumberFormatException e) {
+            return false;
+        }
+    }
+
+    private void showAlert(Alert.AlertType alertType, String title, String content) {
+        Alert alert = new Alert(alertType);
+        alert.setTitle(title);
+        alert.setHeaderText(null);
+        alert.setContentText(content);
+        alert.showAndWait();
     }
 
     private void saveSettings(String printer, String logoPath, String precioTodoElDia) {
@@ -126,17 +150,38 @@ public class ControllerAjustes {
 
         try (FileOutputStream out = new FileOutputStream(SETTINGS_FILE)) {
             props.store(out, "POS Funny Jumping Settings");
-            System.out.println("Configuración guardada exitosamente.");
+
+            Alert alert = new Alert(Alert.AlertType.INFORMATION);
+            alert.setTitle("Éxito");
+            alert.setHeaderText(null);
+            alert.setContentText("Configuración guardada exitosamente.");
+            alert.showAndWait();
         } catch (IOException e) {
             e.printStackTrace();
-            System.out.println("Error al guardar la configuración: " + e.getMessage());
+
+            Alert alert = new Alert(Alert.AlertType.ERROR);
+            alert.setTitle("Error");
+            alert.setHeaderText(null);
+            alert.setContentText("Error al guardar la configuración: " + e.getMessage());
+            alert.showAndWait();
         }
     }
 
-
     private void loadSettings() {
+        File settingsFile = new File(SETTINGS_FILE);
         Properties props = new Properties();
-        try (FileInputStream in = new FileInputStream(SETTINGS_FILE)) {
+
+        if (!settingsFile.exists()) {
+            try {
+                settingsFile.createNewFile();
+                System.out.println("Created new settings file: " + SETTINGS_FILE);
+            } catch (IOException e) {
+                System.out.println("Error creating settings file: " + e.getMessage());
+                return;
+            }
+        }
+
+        try (FileInputStream in = new FileInputStream(settingsFile)) {
             props.load(in);
 
             String savedPrinter = props.getProperty("Printer");
@@ -166,7 +211,7 @@ public class ControllerAjustes {
 
             System.out.println("Settings loaded successfully.");
         } catch (IOException e) {
-            System.out.println("No existing settings file found. Starting with default values.");
+            System.out.println("Error loading settings: " + e.getMessage());
         }
     }
 }

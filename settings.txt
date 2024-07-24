@@ -1,7 +1,7 @@
 #POS Funny Jumping Settings
-#Tue Jul 23 20:27:06 CST 2024
+#Tue Jul 23 21:26:34 CST 2024
 BoldFontPath=C\:\\Users\\Luisf\\IdeaProjects\\POS-FunnyJumping\\src\\main\\resources\\com\\example\\posfunnyjumping\\ubuntu-font-family-0.83\\UbuntuMono-B.ttf
 LogoPath=C\:\\Users\\Luisf\\IdeaProjects\\POS-FunnyJumping\\logo.jpeg
-PrecioTodoElDia=200
+PrecioTodoElDia=150
 Printer=BIXOLON SRP-350II
 RegularFontPath=C\:\\Users\\Luisf\\IdeaProjects\\POS-FunnyJumping\\src\\main\\resources\\com\\example\\posfunnyjumping\\ubuntu-font-family-0.83\\UbuntuMono-R.ttf

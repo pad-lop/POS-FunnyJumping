@@ -10,6 +10,9 @@ ticket.pdf
 funnyJumping.db
 settings.txt
 logo.jpeg
+*.log
+*.pdf
+*.db
 
 ### IntelliJ IDEA ###
 .idea/modules.xml
